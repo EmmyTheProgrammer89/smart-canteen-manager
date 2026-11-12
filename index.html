@@ -60,6 +60,56 @@
                 payments and outstanding credit.
             </p>
         </section>
+           <section class="students-section" id="students">
+
+            <h2>Student Management</h2>
+            <p>Register and manage school students.</p>
+
+            <form id="student-form">
+
+                <label for="admission">Admission Number</label>
+                <input type="text" id="admission"
+                    placeholder="Enter admission number" required>
+
+                <label for="student-name">Full Name</label>
+                <input type="text" id="student-name"
+                    placeholder="Enter student name" required>
+
+                <label for="student-class">Class</label>
+                <input type="text" id="student-class"
+                    placeholder="Example: S4" required>
+
+                <label for="phone">Phone Number (Optional)</label>
+                <input type="tel" id="phone"
+                    placeholder="Enter phone number">
+
+                <button type="submit">Register Student</button>
+
+            </form>
+
+            <h3>Registered Students</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Admission No.</th>
+                        <th>Full Name</th>
+                        <th>Class</th>
+                        <th>Phone</th>
+                    </tr>
+                </thead>
+
+                <tbody id="student-list">
+                </tbody>
+            </table>
+
+        </section>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
 
     </div>
 
