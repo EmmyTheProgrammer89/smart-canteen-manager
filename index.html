@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,15 +9,59 @@
 </head>
 <body>
 
-    <header>
-        <h1>Smart Canteen Manager</h1>
-        <p>Manage student deposits, purchases and credit.</p>
-    </header>
+    <div class="sidebar">
+        <h2>Smart Canteen</h2>
 
-    <main>
-        <h2>Welcome to Smart Canteen Manager</h2>
-        <p>Manage your school canteen efficiently.</p>
-    </main>
+        <nav>
+            <a href="#" class="active">Dashboard</a>
+            <a href="#">Students</a>
+            <a href="#">Deposits</a>
+            <a href="#">Purchases</a>
+            <a href="#">Credit</a>
+            <a href="#">Reports</a>
+        </nav>
+    </div>
+
+    <div class="main-content">
+
+        <header>
+            <h1>Dashboard</h1>
+            <p>Welcome to Smart Canteen Manager</p>
+        </header>
+
+        <section class="cards">
+
+            <div class="card">
+                <h3>Total Students</h3>
+                <p>0</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Deposits</h3>
+                <p>0 RWF</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Sales</h3>
+                <p>0 RWF</p>
+            </div>
+
+            <div class="card">
+                <h3>Outstanding Credit</h3>
+                <p>0 RWF</p>
+            </div>
+
+        </section>
+
+        <section class="welcome">
+            <h2>Manage Your School Canteen</h2>
+            <p>
+                Record student deposits, purchases,
+                payments and outstanding credit.
+            </p>
+        </section>
+
+    </div>
 
     <script src="script.js"></script>
 </body>
