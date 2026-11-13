@@ -127,12 +127,16 @@ document.getElementById("deposit-form")
 
         student.balance = (student.balance || 0) + amount;
 
-        localStorage.setItem(
-            "students",
-            JSON.stringify(students)
-        );
+     student.balance = (student.balance || 0) + amount;
+
+localStorage.setItem(
+    "students",
+    JSON.stringify(students)
+);
 
         alert("Deposit successful!");
 
         document.getElementById("deposit-form").reset();
+
+        
 });
