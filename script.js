@@ -1,25 +1,45 @@
-// Store registered students
-let students = [];
+// Load previously saved students
+let students = JSON.parse(localStorage.getItem("students")) || [];
 
-// Get the registration form
+// Get HTML elements
 const studentForm = document.getElementById("student-form");
-
-// Get the student table
 const studentList = document.getElementById("student-list");
 
-// Listen for form submission
-studentForm.addEventListener("submit", function(event) {
+// Display saved students
+function displayStudents() {
+    studentList.textContent = "";
 
-    // Prevent the page from refreshing
+    students.forEach(student => {
+        const row = document.createElement("tr");
+
+        [
+            student.admission,
+            student.name,
+            student.studentClass,
+            student.phone
+        ].forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value || "Not provided";
+            row.appendChild(cell);
+        });
+
+        studentList.appendChild(row);
+    });
+}
+
+// Display students when the page opens
+displayStudents();
+
+// Register a new student
+studentForm.addEventListener("submit", function(event) {
     event.preventDefault();
 
-    // Collect student information
     const admission = document.getElementById("admission").value.trim();
     const name = document.getElementById("student-name").value.trim();
     const studentClass = document.getElementById("student-class").value.trim();
     const phone = document.getElementById("phone").value.trim();
 
-    // Check for duplicate admission numbers
+    // Check duplicate admission number
     const existingStudent = students.find(
         student => student.admission === admission
     );
@@ -29,7 +49,7 @@ studentForm.addEventListener("submit", function(event) {
         return;
     }
 
-    // Create a student object
+    // Create student
     const student = {
         admission: admission,
         name: name,
@@ -37,25 +57,17 @@ studentForm.addEventListener("submit", function(event) {
         phone: phone
     };
 
-    // Add student to the array
+    // Save student in the array
     students.push(student);
 
-    // Create a new table row
-    const row = document.createElement("tr");
+    // Save students in browser storage
+    localStorage.setItem("students", JSON.stringify(students));
 
-    // Add student information to the row
-    [admission, name, studentClass, phone].forEach(value => {
-        const cell = document.createElement("td");
-        cell.textContent = value || "Not provided";
-        row.appendChild(cell);
-    });
+    // Update the table
+    displayStudents();
 
-    // Display student in the table
-    studentList.appendChild(row);
-
-    // Clear the form
+    // Clear form
     studentForm.reset();
 
-    // Confirm registration
     alert("Student registered successfully!");
 });
