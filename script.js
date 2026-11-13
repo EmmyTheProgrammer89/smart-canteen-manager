@@ -111,8 +111,8 @@ document.getElementById("deposit-form")
             "deposit-amount"
         ).value);
 
-        const student = students.find(
-            student => student.admissionNumber === studentId
+       const student = students.find(
+    student => student.admission === studentId
         );
 
         if (!student) {
