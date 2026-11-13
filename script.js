@@ -39,6 +39,9 @@ function displayStudents() {
 
     students.forEach(student => {
         const row = document.createElement("tr");
+        // UPDATE TOTAL STUDENTS
+document.getElementById("total-students").textContent =
+    students.length;
 
         [
             student.admission,
