@@ -96,3 +96,43 @@ function depositMoney(studentId, amount) {
 
     alert("Deposit successful!");
 }
+// HANDLE STUDENT DEPOSITS
+
+document.getElementById("deposit-form")
+    .addEventListener("submit", function(event) {
+
+        event.preventDefault();
+
+        const studentId = document.getElementById(
+            "deposit-student-id"
+        ).value.trim();
+
+        const amount = Number(document.getElementById(
+            "deposit-amount"
+        ).value);
+
+        const student = students.find(
+            student => student.admissionNumber === studentId
+        );
+
+        if (!student) {
+            alert("Student not found!");
+            return;
+        }
+
+        if (!Number.isFinite(amount) || amount <= 0) {
+            alert("Enter a valid deposit amount!");
+            return;
+        }
+
+        student.balance = (student.balance || 0) + amount;
+
+        localStorage.setItem(
+            "students",
+            JSON.stringify(students)
+        );
+
+        alert("Deposit successful!");
+
+        document.getElementById("deposit-form").reset();
+});
