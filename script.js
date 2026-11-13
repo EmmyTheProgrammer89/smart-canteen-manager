@@ -1,24 +1,40 @@
-// Load previously saved students
-let students = JSON.parse(localStorage.getItem("students")) || [];
 
-// Get HTML elements
+// =====================================
+// SMART CANTEEN MANAGER
+// =====================================
+
+// 1. LOAD SAVED STUDENTS
+let students = JSON.parse(
+    localStorage.getItem("students")
+) || [];
+
+// 2. GET HTML ELEMENTS
 const studentForm = document.getElementById("student-form");
 const studentList = document.getElementById("student-list");
+const depositForm = document.getElementById("deposit-form");
 
-// Display saved students
+// 3. SAVE STUDENTS
+function saveStudents() {
+    localStorage.setItem(
+        "students",
+        JSON.stringify(students)
+    );
+}
+
+// 4. DISPLAY STUDENTS
 function displayStudents() {
     studentList.textContent = "";
 
     students.forEach(student => {
         const row = document.createElement("tr");
 
-       [
-    student.admission,
-    student.name,
-    student.studentClass,
-    student.phone,
-    (student.balance || 0).toLocaleString() + " RWF"
-].forEach(value => {
+        [
+            student.admission,
+            student.name,
+            student.studentClass,
+            student.phone,
+            (student.balance || 0).toLocaleString() + " RWF"
+        ].forEach(value => {
             const cell = document.createElement("td");
             cell.textContent = value || "Not provided";
             row.appendChild(cell);
@@ -28,10 +44,10 @@ function displayStudents() {
     });
 }
 
-// Display students when the page opens
+// 5. DISPLAY STUDENTS WHEN PAGE OPENS
 displayStudents();
 
-// Register a new student
+// 6. REGISTER STUDENT
 studentForm.addEventListener("submit", function(event) {
     event.preventDefault();
 
@@ -40,7 +56,11 @@ studentForm.addEventListener("submit", function(event) {
     const studentClass = document.getElementById("student-class").value.trim();
     const phone = document.getElementById("phone").value.trim();
 
-    // Check duplicate admission number
+    if (!admission || !name || !studentClass) {
+        alert("Please complete the required fields!");
+        return;
+    }
+
     const existingStudent = students.find(
         student => student.admission === admission
     );
@@ -50,32 +70,38 @@ studentForm.addEventListener("submit", function(event) {
         return;
     }
 
-    // Create student
     const student = {
         admission: admission,
         name: name,
         studentClass: studentClass,
-        phone: phone
+        phone: phone,
+        balance: 0
     };
 
-    // Save student in the array
     students.push(student);
 
-    // Save students in browser storage
-    localStorage.setItem("students", JSON.stringify(students));
-
-    // Update the table
+    saveStudents();
     displayStudents();
 
-    // Clear form
     studentForm.reset();
 
     alert("Student registered successfully!");
 });
-{
 
-    let student = students.find(
-        student => student.id === studentId
+// 7. STUDENT DEPOSIT
+depositForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const studentAdmission = document.getElementById(
+        "deposit-student-id"
+    ).value.trim();
+
+    const amount = Number(document.getElementById(
+        "deposit-amount"
+    ).value);
+
+    const student = students.find(
+        student => student.admission === studentAdmission
     );
 
     if (!student) {
@@ -83,59 +109,17 @@ studentForm.addEventListener("submit", function(event) {
         return;
     }
 
-    if (amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
         alert("Enter a valid deposit amount!");
         return;
     }
 
     student.balance = (student.balance || 0) + amount;
 
-    localStorage.setItem(
-        "students",
-        JSON.stringify(students)
-    );
+    saveStudents();
+    displayStudents();
+
+    depositForm.reset();
 
     alert("Deposit successful!");
-}
-// HANDLE STUDENT DEPOSITS
-
-document.getElementById("deposit-form")
-    .addEventListener("submit", function(event) {
-
-        event.preventDefault();
-
-        const studentId = document.getElementById(
-            "deposit-student-id"
-        ).value.trim();
-
-        const amount = Number(document.getElementById(
-            "deposit-amount"
-        ).value);
-
-       const student = students.find(
-    student => student.admission === studentId
-        );
-
-        if (!student) {
-            alert("Student not found!");
-            return;
-        }
-
-        if (!Number.isFinite(amount) || amount <= 0) {
-            alert("Enter a valid deposit amount!");
-            return;
-        }
-  student.balance = (student.balance || 0) + amount;
-
-localStorage.setItem(
-    "students",
-    JSON.stringify(students)
-);
-        displayStudents();
-
-        alert("Deposit successful!");
-
-        document.getElementById("deposit-form").reset();
-
-        
 });
