@@ -72,7 +72,7 @@ studentForm.addEventListener("submit", function(event) {
 
     alert("Student registered successfully!");
 });
-function depositMoney(studentId, amount) {
+{
 
     let student = students.find(
         student => student.id === studentId
