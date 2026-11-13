@@ -7,6 +7,12 @@
 let students = JSON.parse(
     localStorage.getItem("students")
 ) || [];
+// LOAD SAVED TRANSACTIONS
+let transactions = JSON.parse(
+    localStorage.getItem("transactions")
+) || [];
+
+}
 
 // 2. GET HTML ELEMENTS
 const studentForm = document.getElementById("student-form");
@@ -18,6 +24,12 @@ function saveStudents() {
     localStorage.setItem(
         "students",
         JSON.stringify(students)
+    );
+    // SAVE TRANSACTIONS
+function saveTransactions() {
+    localStorage.setItem(
+        "transactions",
+        JSON.stringify(transactions)
     );
 }
 
@@ -115,6 +127,18 @@ depositForm.addEventListener("submit", function(event) {
     }
 
     student.balance = (student.balance || 0) + amount;
+    // RECORD DEPOSIT TRANSACTION
+const transaction = {
+    admission: student.admission,
+    studentName: student.name,
+    type: "Deposit",
+    amount: amount,
+    date: new Date().toLocaleString()
+};
+
+transactions.push(transaction);
+
+saveTransactions();
 
     saveStudents();
     displayStudents();
