@@ -50,11 +50,11 @@ function displayStudents() {
             const cell = document.createElement("td");
             cell.textContent = value || "Not provided";
             row.appendChild(cell);
-             // UPDATE TOTAL STUDENTS
+            
+        });
+         // UPDATE TOTAL STUDENTS
 document.getElementById("total-students").textContent =
     students.length;
-        });
-
         studentList.appendChild(row);
     });
 }
