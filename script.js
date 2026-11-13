@@ -71,3 +71,28 @@ studentForm.addEventListener("submit", function(event) {
 
     alert("Student registered successfully!");
 });
+function depositMoney(studentId, amount) {
+
+    let student = students.find(
+        student => student.id === studentId
+    );
+
+    if (!student) {
+        alert("Student not found!");
+        return;
+    }
+
+    if (amount <= 0) {
+        alert("Enter a valid deposit amount!");
+        return;
+    }
+
+    student.balance = (student.balance || 0) + amount;
+
+    localStorage.setItem(
+        "students",
+        JSON.stringify(students)
+    );
+
+    alert("Deposit successful!");
+}
