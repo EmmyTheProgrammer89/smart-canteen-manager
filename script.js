@@ -39,9 +39,6 @@ function displayStudents() {
 
     students.forEach(student => {
         const row = document.createElement("tr");
-        // UPDATE TOTAL STUDENTS
-document.getElementById("total-students").textContent =
-    students.length;
 
         [
             student.admission,
@@ -53,6 +50,9 @@ document.getElementById("total-students").textContent =
             const cell = document.createElement("td");
             cell.textContent = value || "Not provided";
             row.appendChild(cell);
+             // UPDATE TOTAL STUDENTS
+document.getElementById("total-students").textContent =
+    students.length;
         });
 
         studentList.appendChild(row);
