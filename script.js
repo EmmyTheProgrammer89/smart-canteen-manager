@@ -12,8 +12,6 @@ let transactions = JSON.parse(
     localStorage.getItem("transactions")
 ) || [];
 
-}
-
 // 2. GET HTML ELEMENTS
 const studentForm = document.getElementById("student-form");
 const studentList = document.getElementById("student-list");
@@ -25,7 +23,9 @@ function saveStudents() {
         "students",
         JSON.stringify(students)
     );
-    // SAVE TRANSACTIONS
+}
+
+// SAVE TRANSACTIONS
 function saveTransactions() {
     localStorage.setItem(
         "transactions",
@@ -50,15 +50,16 @@ function displayStudents() {
             const cell = document.createElement("td");
             cell.textContent = value || "Not provided";
             row.appendChild(cell);
-            
         });
-         // UPDATE TOTAL STUDENTS
-document.getElementById("total-students").textContent =
-    students.length;
+
         studentList.appendChild(row);
     });
-}
 
+    // UPDATE TOTAL STUDENTS
+    document.getElementById("total-students").textContent =
+        students.length;
+}
+     
 // 5. DISPLAY STUDENTS WHEN PAGE OPENS
 displayStudents();
 
