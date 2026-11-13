@@ -12,12 +12,13 @@ function displayStudents() {
     students.forEach(student => {
         const row = document.createElement("tr");
 
-        [
-            student.admission,
-            student.name,
-            student.studentClass,
-            student.phone
-        ].forEach(value => {
+       [
+    student.admission,
+    student.name,
+    student.studentClass,
+    student.phone,
+    (student.balance || 0).toLocaleString() + " RWF"
+].forEach(value => {
             const cell = document.createElement("td");
             cell.textContent = value || "Not provided";
             row.appendChild(cell);
@@ -124,15 +125,13 @@ document.getElementById("deposit-form")
             alert("Enter a valid deposit amount!");
             return;
         }
-
-        student.balance = (student.balance || 0) + amount;
-
-     student.balance = (student.balance || 0) + amount;
+  student.balance = (student.balance || 0) + amount;
 
 localStorage.setItem(
     "students",
     JSON.stringify(students)
 );
+        displayStudents();
 
         alert("Deposit successful!");
 
