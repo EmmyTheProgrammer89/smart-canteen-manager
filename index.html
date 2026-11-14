@@ -200,6 +200,139 @@
 
     </form>
 </section>
+     <!-- CREDIT MANAGEMENT SECTION -->
+<section id="credit-section">
+
+    <h2>Credit Management</h2>
+    <p>Manage student purchases made on credit and repayments.</p>
+
+    <!-- RECORD CREDIT PURCHASE -->
+    <h3>Record Credit Purchase</h3>
+
+    <form id="credit-form">
+
+        <label for="credit-student-id">
+            Student Admission Number
+        </label>
+
+        <input
+            type="text"
+            id="credit-student-id"
+            placeholder="Enter admission number"
+            required
+        >
+
+        <label for="credit-description">
+            Product Purchased
+        </label>
+
+        <input
+            type="text"
+            id="credit-description"
+            placeholder="Example: Bread"
+            required
+        >
+
+        <label for="credit-amount">
+            Credit Amount (RWF)
+        </label>
+
+        <input
+            type="number"
+            id="credit-amount"
+            placeholder="Enter amount"
+            min="1"
+            required
+        >
+
+        <button type="submit">
+            Record Credit
+        </button>
+
+    </form>
+
+    <!-- RECORD CREDIT REPAYMENT -->
+    <h3>Credit Repayment</h3>
+
+    <form id="repayment-form">
+
+        <label for="repayment-student-id">
+            Student Admission Number
+        </label>
+
+        <input
+            type="text"
+            id="repayment-student-id"
+            placeholder="Enter admission number"
+            required
+        >
+
+        <label for="repayment-amount">
+            Repayment Amount (RWF)
+        </label>
+
+        <input
+            type="number"
+            id="repayment-amount"
+            placeholder="Enter repayment amount"
+            min="1"
+            required
+        >
+
+        <button type="submit">
+            Record Repayment
+        </button>
+
+    </form>
+
+    <!-- OUTSTANDING CREDIT TABLE -->
+    <h3>Outstanding Student Credit</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Admission Number</th>
+                <th>Student Name</th>
+                <th>Outstanding Credit (RWF)</th>
+            </tr>
+        </thead>
+
+        <tbody id="credit-list">
+        </tbody>
+    </table>
+
+</section>
+
+<!-- REPORTS SECTION -->
+<section id="reports-section">
+
+    <h2>Financial Reports</h2>
+
+    <div class="cards">
+
+        <div class="card">
+            <h3>Total Deposits</h3>
+            <p id="report-deposits">0 RWF</p>
+        </div>
+
+        <div class="card">
+            <h3>Total Sales</h3>
+            <p id="report-sales">0 RWF</p>
+        </div>
+
+        <div class="card">
+            <h3>Outstanding Credit</h3>
+            <p id="report-credit">0 RWF</p>
+        </div>
+
+        <div class="card">
+            <h3>Total Repayments</h3>
+            <p id="report-repayments">0 RWF</p>
+        </div>
+
+    </div>
+
+</section>
  </div>
     <script src="script.js"></script>
 </body>
