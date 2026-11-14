@@ -54,6 +54,7 @@ function displayStudents() {
 
         studentList.appendChild(row);
     });
+  
 
     // UPDATE TOTAL STUDENTS
     document.getElementById("total-students").textContent =
@@ -84,6 +85,7 @@ function displayTransactions() {
         transactionList.appendChild(row);
     });
 }
+displayTransactions();
 
 // 6. REGISTER STUDENT
 studentForm.addEventListener("submit", function(event) {
