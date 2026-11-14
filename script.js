@@ -203,26 +203,37 @@ purchaseForm.addEventListener("submit", function(event) {
     );
 
     if (!student) {
-        alert("Student not found!");
+        alert("Student not found! Check the admission number.");
         return;
     }
 
-    // VALIDATE AMOUNT
+    // VALIDATE INPUT
+    if (!description) {
+        alert("Enter the product name!");
+        return;
+    }
+
     if (!Number.isFinite(amount) || amount <= 0) {
         alert("Enter a valid purchase amount!");
         return;
     }
 
-    // CHECK WALLET BALANCE
-    if (amount > (student.balance || 0)) {
-        alert("Insufficient wallet balance!");
+    // GET CURRENT BALANCE
+    const currentBalance = Number(student.balance) || 0;
+
+    // CHECK BALANCE
+    if (amount > currentBalance) {
+        alert(
+            "Insufficient wallet balance! Current balance: " +
+            currentBalance.toLocaleString() + " RWF"
+        );
         return;
     }
 
-    // DEDUCT PURCHASE AMOUNT
-    student.balance = (student.balance || 0) - amount;
+    // DEDUCT MONEY
+    student.balance = currentBalance - amount;
 
-    // RECORD TRANSACTION
+    // RECORD PURCHASE
     const transaction = {
         admission: student.admission,
         studentName: student.name,
@@ -233,10 +244,11 @@ purchaseForm.addEventListener("submit", function(event) {
 
     transactions.push(transaction);
 
-    // SAVE AND UPDATE
+    // SAVE DATA
     saveStudents();
     saveTransactions();
 
+    // UPDATE TABLES
     displayStudents();
     displayTransactions();
 
