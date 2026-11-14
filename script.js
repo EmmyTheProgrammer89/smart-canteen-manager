@@ -281,11 +281,13 @@ if (studentForm) {
 
         // CLEAR FORM AND GENERATE NEXT NUMBER
 
-        studentForm.reset();
+     studentForm.reset();
 
-        if (admissionInput) {
-            admissionInput.value = generateAdmissionNumber();
-        }
+// GENERATE THE NEXT NUMBER IMMEDIATELY
+if (admissionInput) {
+    admissionInput.value = generateAdmissionNumber();
+    admissionInput.defaultValue = admissionInput.value;
+}
 
         alert("Student registered successfully!");
 
