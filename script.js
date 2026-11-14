@@ -432,7 +432,66 @@ function displayCredits() {
         }
     });
 }
+ // CALCULATE FINANCIAL REPORTS
 
+function updateReports() {
+
+    let totalDeposits = 0;
+    let totalSales = 0;
+    let totalRepayments = 0;
+    let outstandingCredit = 0;
+
+    // CALCULATE FROM TRANSACTION HISTORY
+
+    transactions.forEach(transaction => {
+
+        const amount = Number(transaction.amount) || 0;
+
+        if (transaction.type === "Deposit") {
+            totalDeposits += amount;
+        }
+
+        else if (
+            transaction.type.startsWith("Purchase:") ||
+            transaction.type.startsWith("Credit Purchase:")
+        ) {
+            totalSales += amount;
+        }
+
+        else if (transaction.type === "Credit Repayment") {
+            totalRepayments += amount;
+        }
+    });
+
+    // CALCULATE OUTSTANDING CREDIT FROM STUDENTS
+
+    students.forEach(student => {
+        outstandingCredit += Number(student.creditBalance) || 0;
+    });
+
+    // DISPLAY REPORTS
+
+    const depositsElement = document.getElementById("report-deposits");
+    const salesElement = document.getElementById("report-sales");
+    const creditElement = document.getElementById("report-credit");
+    const repaymentsElement = document.getElementById("report-repayments");
+
+    if (depositsElement) {
+        depositsElement.textContent = formatMoney(totalDeposits);
+    }
+
+    if (salesElement) {
+        salesElement.textContent = formatMoney(totalSales);
+    }
+
+    if (creditElement) {
+        creditElement.textContent = formatMoney(outstandingCredit);
+    }
+
+    if (repaymentsElement) {
+        repaymentsElement.textContent = formatMoney(totalRepayments);
+    }
+}
 
 // 12. REFRESH ALL DISPLAYS
 
@@ -442,14 +501,18 @@ function refreshDisplays() {
     displayTransactions();
     displayCredits();
 
+    // UPDATE TOTAL STUDENTS
+
     const totalStudents = document.getElementById("total-students");
 
     if (totalStudents) {
         totalStudents.textContent = students.length;
     }
+
+    // UPDATE FINANCIAL REPORTS
+
+    updateReports();
 }
-
-
 // 13. REGISTER STUDENT
 
 if (studentForm) {
