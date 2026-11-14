@@ -4,30 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Smart Canteen Manager</title>
-
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<!-- =========================================
-     1. LOGIN SCREEN
-========================================= -->
+<!-- 1. LOGIN SCREEN -->
 
 <main id="login-screen" class="auth-screen">
-
     <div class="login-container">
-
         <h1>Smart Canteen Manager</h1>
-
         <p>Sign in to access your account</p>
 
         <form id="login-form">
-
             <label for="login-email">Email Address</label>
-
             <input
                 type="email"
                 id="login-email"
@@ -37,7 +28,6 @@
             >
 
             <label for="login-password">Password</label>
-
             <input
                 type="password"
                 id="login-password"
@@ -46,53 +36,33 @@
                 required
             >
 
-            <button type="submit">
-                Login
-            </button>
-
+            <button type="submit">Login</button>
             <p id="login-error" class="error-message" role="alert"></p>
-
         </form>
-
     </div>
-
 </main>
 
 
-<!-- =========================================
-     2. ADMINISTRATOR APPLICATION
-========================================= -->
+<!-- 2. ADMINISTRATOR APPLICATION -->
 
 <div id="admin-app" class="app-container" hidden>
 
-    <!-- ADMIN SIDEBAR -->
-
     <div class="sidebar">
-
         <h2>Smart Canteen</h2>
 
         <aside>
-
             <a href="#dashboard-section">Dashboard</a>
-
             <a href="#students-section">Students</a>
-
             <a href="#deposits-section">Deposits</a>
-
             <a href="#purchases-section">Purchases</a>
-
             <a href="#credit-section">Credit</a>
-
             <a href="#transactions-section">Transactions</a>
-
             <a href="#reports-section">Reports</a>
-
         </aside>
 
         <button type="button" id="admin-logout-button">
             Logout
         </button>
-
     </div>
 
 
@@ -101,11 +71,8 @@
     <div class="main-content" id="dashboard-section">
 
         <header>
-
             <h1>Administrator Dashboard</h1>
-
             <p>Welcome to Smart Canteen Manager</p>
-
         </header>
 
 
@@ -139,33 +106,24 @@
         <!-- WELCOME SECTION -->
 
         <section class="welcome">
-
             <h2>Manage Your School Canteen</h2>
-
             <p>
                 Record student deposits, purchases,
                 payments and outstanding credit.
             </p>
-
         </section>
 
 
-        <!-- =====================================
-             3. STUDENT MANAGEMENT
-        ====================================== -->
+        <!-- 3. STUDENT MANAGEMENT -->
 
         <section id="students-section">
 
             <h2>Student Management</h2>
-
             <p>Register and manage school students.</p>
 
             <form id="student-form">
 
-                <label for="admission">
-                    Admission Number
-                </label>
-
+                <label for="admission">Admission Number</label>
                 <input
                     type="text"
                     id="admission"
@@ -173,10 +131,7 @@
                     readonly
                 >
 
-                <label for="student-name">
-                    Full Name
-                </label>
-
+                <label for="student-name">Full Name</label>
                 <input
                     type="text"
                     id="student-name"
@@ -184,10 +139,7 @@
                     required
                 >
 
-                <label for="student-class">
-                    Class
-                </label>
-
+                <label for="student-class">Class</label>
                 <input
                     type="text"
                     id="student-class"
@@ -195,43 +147,30 @@
                     required
                 >
 
-                <label for="phone">
-                    Phone Number (Optional)
-                </label>
-
+                <label for="phone">Phone Number (Optional)</label>
                 <input
                     type="tel"
                     id="phone"
                     placeholder="Enter phone number"
                 >
 
-                <label for="student-email">
-                    Student Email Address
+                <label for="student-auth-uid">
+                    Firebase Authentication UID
                 </label>
 
                 <input
-                    type="email"
-                    id="student-email"
-                    placeholder="Enter student's email"
+                    type="text"
+                    id="student-auth-uid"
+                    placeholder="Paste the student's Firebase UID"
                     required
                 >
 
-                <label for="student-password">
-                    Initial Password
-                </label>
+                <p>
+                    Create the student's login account in Firebase
+                    Authentication first, then paste their UID here.
+                </p>
 
-                <input
-                    type="password"
-                    id="student-password"
-                    placeholder="Create an initial password"
-                    minlength="6"
-                    autocomplete="new-password"
-                    required
-                >
-
-                <button type="submit">
-                    Register Student
-                </button>
+                <button type="submit">Register Student</button>
 
             </form>
 
@@ -239,9 +178,7 @@
             <h3>Registered Students</h3>
 
             <div class="table-container">
-
                 <table>
-
                     <thead>
                         <tr>
                             <th>Admission Number</th>
@@ -254,17 +191,13 @@
                     </thead>
 
                     <tbody id="student-list"></tbody>
-
                 </table>
-
             </div>
 
         </section>
 
 
-        <!-- =====================================
-             4. DEPOSITS
-        ====================================== -->
+        <!-- 4. DEPOSITS -->
 
         <section id="deposits-section">
 
@@ -295,18 +228,14 @@
                     required
                 >
 
-                <button type="submit">
-                    Add Deposit
-                </button>
+                <button type="submit">Add Deposit</button>
 
             </form>
 
         </section>
 
 
-        <!-- =====================================
-             5. TRANSACTION HISTORY
-        ====================================== -->
+        <!-- 5. TRANSACTION HISTORY -->
 
         <section id="transactions-section">
 
@@ -334,7 +263,6 @@
             <div class="table-container">
 
                 <table>
-
                     <thead>
                         <tr>
                             <th>Select</th>
@@ -347,7 +275,6 @@
                     </thead>
 
                     <tbody id="transaction-list"></tbody>
-
                 </table>
 
             </div>
@@ -355,9 +282,7 @@
         </section>
 
 
-        <!-- =====================================
-             6. PURCHASES
-        ====================================== -->
+        <!-- 6. PURCHASES -->
 
         <section id="purchases-section">
 
@@ -399,18 +324,14 @@
                     required
                 >
 
-                <button type="submit">
-                    Record Purchase
-                </button>
+                <button type="submit">Record Purchase</button>
 
             </form>
 
         </section>
 
 
-        <!-- =====================================
-             7. CREDIT MANAGEMENT
-        ====================================== -->
+        <!-- 7. CREDIT MANAGEMENT -->
 
         <section id="credit-section">
 
@@ -459,9 +380,7 @@
                     required
                 >
 
-                <button type="submit">
-                    Record Credit
-                </button>
+                <button type="submit">Record Credit</button>
 
             </form>
 
@@ -493,9 +412,7 @@
                     required
                 >
 
-                <button type="submit">
-                    Record Repayment
-                </button>
+                <button type="submit">Record Repayment</button>
 
             </form>
 
@@ -505,7 +422,6 @@
             <div class="table-container">
 
                 <table>
-
                     <thead>
                         <tr>
                             <th>Admission Number</th>
@@ -515,17 +431,13 @@
                     </thead>
 
                     <tbody id="credit-list"></tbody>
-
                 </table>
-
             </div>
 
         </section>
 
 
-        <!-- =====================================
-             8. FINANCIAL REPORTS
-        ====================================== -->
+        <!-- 8. FINANCIAL REPORTS -->
 
         <section id="reports-section">
 
@@ -558,13 +470,10 @@
         </section>
 
     </div>
-
 </div>
 
 
-<!-- =========================================
-     9. STUDENT PORTAL
-========================================= -->
+<!-- 9. STUDENT PORTAL -->
 
 <div id="student-app" class="student-app" hidden>
 
@@ -613,11 +522,8 @@
         <h2>My Wallet Balance</h2>
 
         <div class="card">
-
             <h3>Available Balance</h3>
-
             <p id="student-balance">Loading...</p>
-
         </div>
 
     </section>
@@ -636,7 +542,6 @@
         <div class="table-container">
 
             <table>
-
                 <thead>
                     <tr>
                         <th>Admission Number</th>
@@ -646,7 +551,6 @@
                 </thead>
 
                 <tbody id="student-directory-list"></tbody>
-
             </table>
 
         </div>
@@ -656,9 +560,7 @@
 </div>
 
 
-<!-- =========================================
-     10. JAVASCRIPT MODULE
-========================================= -->
+<!-- 10. JAVASCRIPT MODULE -->
 
 <script type="module" src="script.js"></script>
 
