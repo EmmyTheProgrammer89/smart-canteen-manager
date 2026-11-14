@@ -16,7 +16,7 @@ let transactions = JSON.parse(
 const studentForm = document.getElementById("student-form");
 const studentList = document.getElementById("student-list");
 const depositForm = document.getElementById("deposit-form");
-
+const transactionList = document.getElementById("transaction-list");
 // 3. SAVE STUDENTS
 function saveStudents() {
     localStorage.setItem(
@@ -62,6 +62,28 @@ function displayStudents() {
      
 // 5. DISPLAY STUDENTS WHEN PAGE OPENS
 displayStudents();
+// DISPLAY TRANSACTION HISTORY
+function displayTransactions() {
+    transactionList.textContent = "";
+
+    transactions.forEach(transaction => {
+        const row = document.createElement("tr");
+
+        [
+            transaction.admission,
+            transaction.studentName,
+            transaction.type,
+            transaction.amount.toLocaleString() + " RWF",
+            transaction.date
+        ].forEach(value => {
+            const cell = document.createElement("td");
+            cell.textContent = value;
+            row.appendChild(cell);
+        });
+
+        transactionList.appendChild(row);
+    });
+}
 
 // 6. REGISTER STUDENT
 studentForm.addEventListener("submit", function(event) {
@@ -98,6 +120,7 @@ studentForm.addEventListener("submit", function(event) {
 
     saveStudents();
     displayStudents();
+    displayTransactions();
 
     studentForm.reset();
 
@@ -144,8 +167,9 @@ transactions.push(transaction);
 
 saveTransactions();
 
-    saveStudents();
-    displayStudents();
+saveStudents();
+displayStudents();
+displayTransactions();
 
     depositForm.reset();
 
