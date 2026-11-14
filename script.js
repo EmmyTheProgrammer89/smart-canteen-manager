@@ -141,37 +141,23 @@ function generateAdmissionNumber() {
 // 6. DISPLAY STUDENTS
 
 function displayStudents() {
-
-    if (!studentList) return;
-
-    studentList.textContent = "";
+    studentList.innerHTML = "";
 
     students.forEach(student => {
-
         const row = document.createElement("tr");
 
-        const values = [
-            student.admission,
-            student.name,
-            student.studentClass,
-            student.phone || "Not provided",
-            formatMoney(student.balance)
-        ];
+        row.innerHTML = `
+            <td>${student.admission}</td>
+            <td>${student.name}</td>
+           <td>${student.studentClass}</td>
+            <td>${student.phone}</td>
+            <td>${formatMoney(student.balance)}</td>
+        `;
 
-        values.forEach(value => {
-
-            const cell = document.createElement("td");
-            cell.textContent = value ?? "";
-
-            row.appendChild(cell);
-        });
-
-        // DELETE BUTTON
-
+        // ACTION COLUMN
         const actionCell = document.createElement("td");
 
         const deleteButton = document.createElement("button");
-
         deleteButton.textContent = "Delete";
         deleteButton.type = "button";
         deleteButton.className = "delete-student-btn";
@@ -182,6 +168,7 @@ function displayStudents() {
 
         studentList.appendChild(row);
     });
+}
 
     // UPDATE TOTAL STUDENTS
 
@@ -330,25 +317,17 @@ function displayCredits() {
 // 10. REFRESH ALL DISPLAYS
 
 function refreshDisplays() {
-
-    displayStudents(
-        // ACTION COLUMN
-const actionCell = document.createElement("td");
-
-const deleteButton = document.createElement("button");
-deleteButton.textContent = "Delete";
-deleteButton.type = "button";
-deleteButton.className = "delete-student-btn";
-deleteButton.dataset.admission = student.admission;
-
-actionCell.appendChild(deleteButton);
-row.appendChild(actionCell);
-    );
+    displayStudents();
     displayTransactions();
     displayCredits();
 
-}
+    // UPDATE TOTAL STUDENTS
+    const totalStudents = document.getElementById("total-students");
 
+    if (totalStudents) {
+        totalStudents.textContent = students.length;
+    }
+}
 
 // 11. REGISTER STUDENT
 
