@@ -365,3 +365,24 @@ creditForm.addEventListener("submit", function(event) {
 
     alert("Credit purchase recorded successfully!");
 });
+   // RECORD TRANSACTION
+    transactions.push({
+        admission: student.admission,
+        studentName: student.name,
+        type: "Credit Repayment",
+        amount: amount,
+        date: new Date().toLocaleString()
+    });
+
+    // SAVE DATA
+    saveStudents();
+    saveTransactions();
+
+    // REFRESH DISPLAY
+    displayCredits();
+    displayTransactions();
+
+    repaymentForm.reset();
+
+    alert("Credit repayment recorded successfully!");
+});
