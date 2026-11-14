@@ -3,8 +3,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // =============================================
 // SMART CANTEEN MANAGER
-// COMPLETE JAVASCRIPT WITH SELECTIVE
-// TRANSACTION HISTORY DELETION
+// COMPLETE FINAL JAVASCRIPT
 // =============================================
 
 
@@ -90,6 +89,7 @@ function findStudent(admission) {
 }
 
 function recordTransaction(student, type, amount) {
+
     const transaction = {
         admission: student.admission,
         studentName: student.name,
@@ -302,6 +302,9 @@ function updateSelectAllCheckbox() {
         selectedCheckboxes.length < checkboxes.length;
 }
 
+
+// SELECT ALL CHECKBOX EVENT
+
 if (selectAllTransactions) {
 
     selectAllTransactions.addEventListener("change", function() {
@@ -326,7 +329,9 @@ if (transactionList) {
 
     transactionList.addEventListener("change", function(event) {
 
-        if (event.target.classList.contains("transaction-checkbox")) {
+        if (
+            event.target.classList.contains("transaction-checkbox")
+        ) {
             updateSelectAllCheckbox();
         }
 
@@ -381,11 +386,9 @@ if (deleteSelectedTransactions) {
 
         saveTransactions();
 
-        // REFRESH TRANSACTION TABLE
+        // REFRESH ALL DISPLAYS AND REPORTS
 
-        displayTransactions();
-
-        // RESET SELECT ALL
+        refreshDisplays();
 
         if (selectAllTransactions) {
             selectAllTransactions.checked = false;
@@ -395,81 +398,6 @@ if (deleteSelectedTransactions) {
         alert("Selected transaction history deleted successfully!");
 
     });
-}
-    
- //  CALCULATE FINANCIAL REPORTS
-
-function updateReports() {
-
-    let totalDeposits = 0;
-    let totalSales = 0;
-    let totalRepayments = 0;
-    let outstandingCredit = 0;
-
-    transactions.forEach(transaction => {
-
-        const amount = Number(transaction.amount) || 0;
-
-        if (transaction.type === "Deposit") {
-            totalDeposits += amount;
-        }
-
-        else if (
-            transaction.type.startsWith("Purchase:") ||
-            transaction.type.startsWith("Credit Purchase:")
-        ) {
-            totalSales += amount;
-        }
-
-        else if (transaction.type === "Credit Repayment") {
-            totalRepayments += amount;
-        }
-    });
-
-    students.forEach(student => {
-        outstandingCredit += Number(student.creditBalance) || 0;
-    });
-
-    // FINANCIAL REPORTS
-
-    const depositsElement = document.getElementById("report-deposits");
-    const salesElement = document.getElementById("report-sales");
-    const creditElement = document.getElementById("report-credit");
-    const repaymentsElement = document.getElementById("report-repayments");
-
-    if (depositsElement) {
-        depositsElement.textContent = formatMoney(totalDeposits);
-    }
-
-    if (salesElement) {
-        salesElement.textContent = formatMoney(totalSales);
-    }
-
-    if (creditElement) {
-        creditElement.textContent = formatMoney(outstandingCredit);
-    }
-
-    if (repaymentsElement) {
-        repaymentsElement.textContent = formatMoney(totalRepayments);
-    }
-
-    // DASHBOARD CARDS
-
-    const dashboardDeposits = document.getElementById("dashboard-deposits");
-    const dashboardSales = document.getElementById("dashboard-sales");
-    const dashboardCredit = document.getElementById("dashboard-credit");
-
-    if (dashboardDeposits) {
-        dashboardDeposits.textContent = formatMoney(totalDeposits);
-    }
-
-    if (dashboardSales) {
-        dashboardSales.textContent = formatMoney(totalSales);
-    }
-
-    if (dashboardCredit) {
-        dashboardCredit.textContent = formatMoney(outstandingCredit);
-    }
 }
 
 
@@ -507,7 +435,9 @@ function displayCredits() {
         }
     });
 }
- // CALCULATE FINANCIAL REPORTS
+
+
+// 12. UPDATE FINANCIAL REPORTS AND DASHBOARD
 
 function updateReports() {
 
@@ -521,54 +451,99 @@ function updateReports() {
     transactions.forEach(transaction => {
 
         const amount = Number(transaction.amount) || 0;
+        const type = String(transaction.type || "");
 
-        if (transaction.type === "Deposit") {
+        if (type === "Deposit") {
+
             totalDeposits += amount;
+
         }
 
         else if (
-            transaction.type.startsWith("Purchase:") ||
-            transaction.type.startsWith("Credit Purchase:")
+            type.startsWith("Purchase:") ||
+            type.startsWith("Credit Purchase:")
         ) {
+
             totalSales += amount;
+
         }
 
-        else if (transaction.type === "Credit Repayment") {
+        else if (type === "Credit Repayment") {
+
             totalRepayments += amount;
+
         }
     });
 
-    // CALCULATE OUTSTANDING CREDIT FROM STUDENTS
+    // CALCULATE OUTSTANDING CREDIT
 
     students.forEach(student => {
-        outstandingCredit += Number(student.creditBalance) || 0;
+
+        outstandingCredit +=
+            Number(student.creditBalance) || 0;
+
     });
 
-    // DISPLAY REPORTS
 
-    const depositsElement = document.getElementById("report-deposits");
-    const salesElement = document.getElementById("report-sales");
-    const creditElement = document.getElementById("report-credit");
-    const repaymentsElement = document.getElementById("report-repayments");
+    // FINANCIAL REPORTS
 
-    if (depositsElement) {
-        depositsElement.textContent = formatMoney(totalDeposits);
+    const reportDeposits =
+        document.getElementById("report-deposits");
+
+    const reportSales =
+        document.getElementById("report-sales");
+
+    const reportCredit =
+        document.getElementById("report-credit");
+
+    const reportRepayments =
+        document.getElementById("report-repayments");
+
+
+    if (reportDeposits) {
+        reportDeposits.textContent = formatMoney(totalDeposits);
     }
 
-    if (salesElement) {
-        salesElement.textContent = formatMoney(totalSales);
+    if (reportSales) {
+        reportSales.textContent = formatMoney(totalSales);
     }
 
-    if (creditElement) {
-        creditElement.textContent = formatMoney(outstandingCredit);
+    if (reportCredit) {
+        reportCredit.textContent = formatMoney(outstandingCredit);
     }
 
-    if (repaymentsElement) {
-        repaymentsElement.textContent = formatMoney(totalRepayments);
+    if (reportRepayments) {
+        reportRepayments.textContent = formatMoney(totalRepayments);
+    }
+
+
+    // DASHBOARD CARDS
+
+    const dashboardDeposits =
+        document.getElementById("dashboard-deposits");
+
+    const dashboardSales =
+        document.getElementById("dashboard-sales");
+
+    const dashboardCredit =
+        document.getElementById("dashboard-credit");
+
+
+    if (dashboardDeposits) {
+        dashboardDeposits.textContent = formatMoney(totalDeposits);
+    }
+
+    if (dashboardSales) {
+        dashboardSales.textContent = formatMoney(totalSales);
+    }
+
+    if (dashboardCredit) {
+        dashboardCredit.textContent = formatMoney(outstandingCredit);
     }
 }
 
-// 12. REFRESH ALL DISPLAYS
+
+// 13. REFRESH ALL DISPLAYS
 
 function refreshDisplays() {
 
@@ -578,19 +553,24 @@ function refreshDisplays() {
 
     // UPDATE TOTAL STUDENTS
 
-    const totalStudents = document.getElementById("total-students");
+    const totalStudents =
+        document.getElementById("total-students");
 
     if (totalStudents) {
         totalStudents.textContent = students.length;
     }
 
-    // UPDATE FINANCIAL REPORTS
+    // UPDATE FINANCIAL REPORTS AND DASHBOARD
 
     updateReports();
 }
-// 13. REGISTER STUDENT
+
+
+// 14. REGISTER STUDENT
 
 if (studentForm) {
+
+    // SHOW NEXT ADMISSION NUMBER
 
     if (admissionInput) {
         admissionInput.value = generateAdmissionNumber();
@@ -620,6 +600,8 @@ if (studentForm) {
             return;
         }
 
+        // CREATE STUDENT
+
         const student = {
             admission: admission,
             name: name,
@@ -630,6 +612,8 @@ if (studentForm) {
         };
 
         students.push(student);
+
+        // SAVE LAST USED ADMISSION NUMBER
 
         const numberMatch = admission.match(/^ASYV(\d+)$/i);
 
@@ -655,7 +639,7 @@ if (studentForm) {
 }
 
 
-// 14. STUDENT DEPOSIT
+// 15. STUDENT DEPOSIT
 
 if (depositForm) {
 
@@ -678,7 +662,10 @@ if (depositForm) {
             return;
         }
 
-        student.balance = (Number(student.balance) || 0) + amount;
+        // ADD MONEY TO WALLET
+
+        student.balance =
+            (Number(student.balance) || 0) + amount;
 
         recordTransaction(student, "Deposit", amount);
 
@@ -695,7 +682,7 @@ if (depositForm) {
 }
 
 
-// 15. STUDENT PURCHASE
+// 16. STUDENT PURCHASE
 
 if (purchaseForm) {
 
@@ -724,6 +711,8 @@ if (purchaseForm) {
             return;
         }
 
+        // CHECK WALLET BALANCE
+
         const currentBalance = Number(student.balance) || 0;
 
         if (amount > currentBalance) {
@@ -735,6 +724,8 @@ if (purchaseForm) {
 
             return;
         }
+
+        // DEDUCT MONEY
 
         student.balance = currentBalance - amount;
 
@@ -757,7 +748,7 @@ if (purchaseForm) {
 }
 
 
-// 16. RECORD STUDENT CREDIT PURCHASE
+// 17. RECORD STUDENT CREDIT PURCHASE
 
 if (creditForm) {
 
@@ -781,6 +772,8 @@ if (creditForm) {
             return;
         }
 
+        // ADD TO OUTSTANDING CREDIT
+
         student.creditBalance =
             (Number(student.creditBalance) || 0) + amount;
 
@@ -803,7 +796,7 @@ if (creditForm) {
 }
 
 
-// 17. RECORD CREDIT REPAYMENT
+// 18. RECORD CREDIT REPAYMENT
 
 if (repaymentForm) {
 
@@ -826,12 +819,17 @@ if (repaymentForm) {
             return;
         }
 
-        const currentCredit = Number(student.creditBalance) || 0;
+        // CHECK OUTSTANDING CREDIT
+
+        const currentCredit =
+            Number(student.creditBalance) || 0;
 
         if (currentCredit <= 0) {
             alert("This student has no outstanding credit!");
             return;
         }
+
+        // PREVENT EXCESS REPAYMENT
 
         if (amount > currentCredit) {
 
@@ -841,6 +839,8 @@ if (repaymentForm) {
 
             return;
         }
+
+        // REDUCE CREDIT BALANCE
 
         student.creditBalance = currentCredit - amount;
 
