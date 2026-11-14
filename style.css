@@ -99,3 +99,32 @@ header h1 {
 .welcome p {
     color: #666;
 }
+/* SIDEBAR NAVIGATION */
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.sidebar h2 {
+    color: white;
+    margin-bottom: 30px;
+}
+
+.sidebar aside {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.sidebar aside a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.sidebar aside a:hover {
+    background-color: #256080;
+}
