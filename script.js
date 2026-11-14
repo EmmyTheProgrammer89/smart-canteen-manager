@@ -94,6 +94,23 @@ function recordTransaction(student, type, amount) {
 
     transactions.push(transaction);
 }
+    // GENERATE NEXT ADMISSION NUMBER
+function generateAdmissionNumber() {
+    let highestNumber = 0;
+
+    students.forEach(student => {
+        const match = student.admission.match(/^ASYV(\d+)$/i);
+
+        if (match) {
+            highestNumber = Math.max(
+                highestNumber,
+                Number(match[1])
+            );
+        }
+    });
+
+    return "ASYV" + String(highestNumber + 1).padStart(3, "0");
+}
 
 
 // 5. DISPLAY STUDENTS
@@ -284,6 +301,9 @@ if (studentForm) {
     });
 
 }
+    const admission = generateAdmissionNumber();
+
+document.getElementById("admission").value = admission;
 
 
 // 10. STUDENT DEPOSIT
