@@ -1,6 +1,7 @@
+
 // ============================================
 // SMART CANTEEN MANAGER
-// FIREBASE VERSION
+// FIREBASE VERSION - CORRECTED
 // ============================================
 
 import { auth, db } from "./firebase.js";
@@ -19,9 +20,6 @@ import {
     query,
     where,
     setDoc,
-    addDoc,
-    updateDoc,
-    deleteDoc,
     writeBatch,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
@@ -31,7 +29,7 @@ import {
 // 1. CONFIGURATION
 // ============================================
 
-// Your administrator Firebase UID
+// Administrator Firebase UID
 const ADMIN_UID = "mRLoouOWj4Ng4phNGB7e6QAaNY32";
 
 
@@ -149,6 +147,7 @@ function getBalanceByUid(uid) {
 
 
 function getDateValue(transaction) {
+
     if (transaction.date) {
         return new Date(transaction.date);
     }
@@ -157,11 +156,12 @@ function getDateValue(transaction) {
         return transaction.createdAt.toDate();
     }
 
-    return new Date();
+    return new Date(0);
 }
 
 
 function formatDate(transaction) {
+
     const date = getDateValue(transaction);
 
     if (Number.isNaN(date.getTime())) {
@@ -177,6 +177,7 @@ function formatDate(transaction) {
 // ============================================
 
 loginForm.addEventListener("submit", async function(event) {
+
     event.preventDefault();
 
     const email = getValue("login-email");
@@ -190,26 +191,36 @@ loginForm.addEventListener("submit", async function(event) {
     showError("Signing in...");
 
     try {
+
         await signInWithEmailAndPassword(auth, email, password);
+
         showError("");
 
     } catch (error) {
+
         console.error("Login error:", error);
+
         showError("Login failed. Check your email and password.");
     }
 });
 
 
 async function logoutUser() {
+
     try {
+
         await signOut(auth);
+
         students = [];
         balances = {};
-        transactions = {};
+        transactions = [];
+
         showLogin();
 
     } catch (error) {
+
         console.error("Logout error:", error);
+
         alert("Unable to log out. Please try again.");
     }
 }
@@ -218,6 +229,7 @@ async function logoutUser() {
 if (adminLogoutButton) {
     adminLogoutButton.addEventListener("click", logoutUser);
 }
+
 
 if (studentLogoutButton) {
     studentLogoutButton.addEventListener("click", logoutUser);
@@ -231,28 +243,42 @@ if (studentLogoutButton) {
 onAuthStateChanged(auth, async function(user) {
 
     if (!user) {
+
         showLogin();
+
         return;
     }
 
-    // ADMIN
+
+    // ADMINISTRATOR LOGIN
+
     if (user.uid === ADMIN_UID) {
+
         showAdmin();
 
         try {
+
             await loadAdminData();
+
             refreshDisplays();
 
         } catch (error) {
+
             console.error("Admin loading error:", error);
-            alert("Could not load administrator data. Check your Firebase rules and connection.");
+
+            alert(
+                "Could not load administrator data. Check your Firebase rules and connection."
+            );
         }
 
         return;
     }
 
-    // STUDENT
+
+    // STUDENT LOGIN
+
     try {
+
         const studentQuery = query(
             collection(db, "students"),
             where("authUid", "==", user.uid)
@@ -261,12 +287,19 @@ onAuthStateChanged(auth, async function(user) {
         const studentSnapshot = await getDocs(studentQuery);
 
         if (studentSnapshot.empty) {
-            alert("Your account has not been linked to a student record. Please contact the administrator.");
+
+            alert(
+                "Your account has not been linked to a student record. Please contact the administrator."
+            );
+
             await signOut(auth);
+
             return;
         }
 
+
         const studentDocument = studentSnapshot.docs[0];
+
         const student = studentDocument.data();
 
         showStudent();
@@ -274,8 +307,13 @@ onAuthStateChanged(auth, async function(user) {
         await loadStudentPortal(user.uid, student);
 
     } catch (error) {
+
         console.error("Student loading error:", error);
-        alert("Unable to load your student account. Please contact the administrator.");
+
+        alert(
+            "Unable to load your student account. Please contact the administrator."
+        );
+
         await signOut(auth);
     }
 });
@@ -287,7 +325,8 @@ onAuthStateChanged(auth, async function(user) {
 
 async function loadAdminData() {
 
-    // Load students
+    // LOAD STUDENTS
+
     const studentSnapshot = await getDocs(
         collection(db, "students")
     );
@@ -298,7 +337,8 @@ async function loadAdminData() {
     }));
 
 
-    // Load balances
+    // LOAD BALANCES
+
     const balanceSnapshot = await getDocs(
         collection(db, "balances")
     );
@@ -306,11 +346,14 @@ async function loadAdminData() {
     balances = {};
 
     balanceSnapshot.forEach(document => {
+
         balances[document.id] = document.data();
+
     });
 
 
-    // Load transactions
+    // LOAD TRANSACTIONS
+
     const transactionSnapshot = await getDocs(
         collection(db, "transactions")
     );
@@ -320,8 +363,13 @@ async function loadAdminData() {
         id: document.id
     }));
 
+
+    // SORT TRANSACTIONS
+
     transactions.sort((a, b) => {
+
         return getDateValue(b) - getDateValue(a);
+
     });
 }
 
@@ -335,9 +383,11 @@ function generateAdmissionNumber() {
     let highestNumber = 0;
 
     students.forEach(student => {
+
         const match = String(student.admission || "").match(/^ASYV(\d+)$/);
 
         if (match) {
+
             highestNumber = Math.max(
                 highestNumber,
                 Number(match[1])
@@ -362,29 +412,45 @@ if (studentForm) {
         event.preventDefault();
 
         const name = getValue("student-name");
+
         const studentClass = getValue("student-class");
+
         const phone = getValue("phone");
+
         const authUid = getValue("student-auth-uid");
 
+
         if (!name || !studentClass || !authUid) {
+
             alert("Please complete all required student information.");
+
             return;
         }
 
+
+        // CHECK DUPLICATE UID
+
         const duplicateUid = students.find(student => {
+
             return student.authUid === authUid;
+
         });
 
         if (duplicateUid) {
+
             alert("This Firebase UID is already linked to another student.");
+
             return;
         }
 
+
         const admission = generateAdmissionNumber();
+
 
         try {
 
-            // Create student profile
+            // CREATE STUDENT PROFILE
+
             await setDoc(
                 doc(db, "students", admission),
                 {
@@ -398,7 +464,8 @@ if (studentForm) {
             );
 
 
-            // Create separate financial record
+            // CREATE SEPARATE FINANCIAL RECORD
+
             await setDoc(
                 doc(db, "balances", authUid),
                 {
@@ -409,16 +476,23 @@ if (studentForm) {
             );
 
 
-            alert("Student registered successfully!\nAdmission number: " + admission);
+            alert(
+                "Student registered successfully!\nAdmission number: " + admission
+            );
 
             studentForm.reset();
 
             await loadAdminData();
+
             refreshDisplays();
 
         } catch (error) {
+
             console.error("Student registration error:", error);
-            alert("Could not register student. Check the Firebase UID and your connection.");
+
+            alert(
+                "Could not register student. Check the Firebase UID and your connection."
+            );
         }
     });
 }
@@ -434,14 +508,18 @@ function displayStudents() {
 
     studentList.innerHTML = "";
 
+
     if (students.length === 0) {
+
         studentList.innerHTML = `
             <tr>
-                <td colspan="5">No students registered yet.</td>
+                <td colspan="6">No students registered yet.</td>
             </tr>
         `;
+
         return;
     }
+
 
     students.forEach(student => {
 
@@ -451,10 +529,15 @@ function displayStudents() {
 
         row.innerHTML = `
             <td>${escapeHTML(student.admission)}</td>
+
             <td>${escapeHTML(student.name)}</td>
+
             <td>${escapeHTML(student.studentClass)}</td>
+
             <td>${escapeHTML(student.phone || "")}</td>
+
             <td>${formatMoney(financialRecord.balance)}</td>
+
             <td>
                 <button
                     type="button"
@@ -467,6 +550,7 @@ function displayStudents() {
         `;
 
         studentList.appendChild(row);
+
     });
 }
 
@@ -489,18 +573,29 @@ if (studentList) {
 
         if (!student) return;
 
+
         const financialRecord = getBalanceByUid(student.authUid);
 
+
+        // PREVENT DELETION IF CREDIT REMAINS
+
         if (Number(financialRecord.creditBalance || 0) > 0) {
-            alert("This student still has unpaid credit. Clear the credit before deleting the student.");
+
+            alert(
+                "This student still has unpaid credit. Clear the credit before deleting the student."
+            );
+
             return;
         }
 
+
         const confirmed = confirm(
-            "Delete " + student.name + "?\n\nTheir transaction history will be preserved."
+            "Delete " + student.name +
+            "?\n\nTheir transaction history will be preserved."
         );
 
         if (!confirmed) return;
+
 
         try {
 
@@ -516,13 +611,20 @@ if (studentList) {
 
             await batch.commit();
 
+
             await loadAdminData();
+
             refreshDisplays();
 
-            alert("Student deleted. Their transaction history has been preserved.");
+
+            alert(
+                "Student deleted. Their transaction history has been preserved."
+            );
 
         } catch (error) {
+
             console.error("Student deletion error:", error);
+
             alert("Could not delete this student.");
         }
     });
@@ -530,44 +632,7 @@ if (studentList) {
 
 
 // ============================================
-// 12. POPULATE STUDENT SELECT MENUS
-// ============================================
-
-function populateStudentSelects() {
-
-    const selectIds = [
-        "deposit-student-id",
-        "purchase-student-id",
-        "credit-student-id",
-        "repayment-student-id"
-    ];
-
-    selectIds.forEach(id => {
-
-        const select = document.getElementById(id);
-
-        if (!select) return;
-
-        select.innerHTML = `
-            <option value="">Select student</option>
-        `;
-
-        students.forEach(student => {
-
-            const option = document.createElement("option");
-
-            option.value = student.admission;
-            option.textContent =
-                student.admission + " - " + student.name;
-
-            select.appendChild(option);
-        });
-    });
-}
-
-
-// ============================================
-// 13. RECORD FINANCIAL TRANSACTION
+// 12. RECORD FINANCIAL TRANSACTION
 // ============================================
 
 async function recordFinancialTransaction(
@@ -580,15 +645,20 @@ async function recordFinancialTransaction(
 
     const batch = writeBatch(db);
 
+
     const balanceReference = doc(
         db,
         "balances",
         student.authUid
     );
 
+
     const transactionReference = doc(
         collection(db, "transactions")
     );
+
+
+    // UPDATE BALANCE
 
     batch.set(
         balanceReference,
@@ -598,6 +668,9 @@ async function recordFinancialTransaction(
             creditBalance: newCreditBalance
         }
     );
+
+
+    // SAVE TRANSACTION
 
     batch.set(
         transactionReference,
@@ -611,15 +684,18 @@ async function recordFinancialTransaction(
         }
     );
 
+
     await batch.commit();
 
+
     await loadAdminData();
+
     refreshDisplays();
 }
 
 
 // ============================================
-// 14. DEPOSIT MONEY
+// 13. DEPOSIT MONEY
 // ============================================
 
 if (depositForm) {
@@ -629,19 +705,27 @@ if (depositForm) {
         event.preventDefault();
 
         const admission = getValue("deposit-student-id");
+
         const amount = Number(getValue("deposit-amount"));
 
         const student = getStudentByAdmission(admission);
 
+
         if (!student) {
-            alert("Please select a valid student.");
+
+            alert("Please enter a valid student admission number.");
+
             return;
         }
 
+
         if (!Number.isFinite(amount) || amount <= 0) {
+
             alert("Enter a valid deposit amount.");
+
             return;
         }
+
 
         try {
 
@@ -649,6 +733,7 @@ if (depositForm) {
 
             const newBalance =
                 Number(current.balance || 0) + amount;
+
 
             await recordFinancialTransaction(
                 student,
@@ -658,12 +743,15 @@ if (depositForm) {
                 Number(current.creditBalance || 0)
             );
 
+
             depositForm.reset();
 
             alert("Deposit recorded successfully.");
 
         } catch (error) {
+
             console.error("Deposit error:", error);
+
             alert("Could not record the deposit.");
         }
     });
@@ -671,7 +759,7 @@ if (depositForm) {
 
 
 // ============================================
-// 15. MAKE PURCHASE
+// 14. MAKE PURCHASE
 // ============================================
 
 if (purchaseForm) {
@@ -681,32 +769,46 @@ if (purchaseForm) {
         event.preventDefault();
 
         const admission = getValue("purchase-student-id");
+
         const description = getValue("purchase-description");
+
         const amount = Number(getValue("purchase-amount"));
 
         const student = getStudentByAdmission(admission);
 
+
         if (!student) {
-            alert("Please select a valid student.");
+
+            alert("Please enter a valid student admission number.");
+
             return;
         }
 
+
         if (!Number.isFinite(amount) || amount <= 0) {
+
             alert("Enter a valid purchase amount.");
+
             return;
         }
+
 
         const current = getBalanceByUid(student.authUid);
 
+
         if (Number(current.balance || 0) < amount) {
+
             alert("Insufficient wallet balance.");
+
             return;
         }
+
 
         try {
 
             const newBalance =
                 Number(current.balance || 0) - amount;
+
 
             await recordFinancialTransaction(
                 student,
@@ -716,12 +818,15 @@ if (purchaseForm) {
                 Number(current.creditBalance || 0)
             );
 
+
             purchaseForm.reset();
 
             alert("Purchase recorded successfully.");
 
         } catch (error) {
+
             console.error("Purchase error:", error);
+
             alert("Could not record the purchase.");
         }
     });
@@ -729,7 +834,7 @@ if (purchaseForm) {
 
 
 // ============================================
-// 16. RECORD CREDIT
+// 15. RECORD CREDIT
 // ============================================
 
 if (creditForm) {
@@ -739,20 +844,29 @@ if (creditForm) {
         event.preventDefault();
 
         const admission = getValue("credit-student-id");
+
         const description = getValue("credit-description");
+
         const amount = Number(getValue("credit-amount"));
 
         const student = getStudentByAdmission(admission);
 
+
         if (!student) {
-            alert("Please select a valid student.");
+
+            alert("Please enter a valid student admission number.");
+
             return;
         }
 
+
         if (!Number.isFinite(amount) || amount <= 0) {
+
             alert("Enter a valid credit amount.");
+
             return;
         }
+
 
         try {
 
@@ -760,6 +874,7 @@ if (creditForm) {
 
             const newCreditBalance =
                 Number(current.creditBalance || 0) + amount;
+
 
             await recordFinancialTransaction(
                 student,
@@ -769,12 +884,15 @@ if (creditForm) {
                 newCreditBalance
             );
 
+
             creditForm.reset();
 
             alert("Credit recorded successfully.");
 
         } catch (error) {
+
             console.error("Credit error:", error);
+
             alert("Could not record the credit.");
         }
     });
@@ -782,7 +900,7 @@ if (creditForm) {
 
 
 // ============================================
-// 17. RECORD CREDIT REPAYMENT
+// 16. RECORD CREDIT REPAYMENT
 // ============================================
 
 if (repaymentForm) {
@@ -792,31 +910,46 @@ if (repaymentForm) {
         event.preventDefault();
 
         const admission = getValue("repayment-student-id");
+
         const amount = Number(getValue("repayment-amount"));
 
         const student = getStudentByAdmission(admission);
 
+
         if (!student) {
-            alert("Please select a valid student.");
+
+            alert("Please enter a valid student admission number.");
+
             return;
         }
 
+
         if (!Number.isFinite(amount) || amount <= 0) {
+
             alert("Enter a valid repayment amount.");
+
             return;
         }
+
 
         const current = getBalanceByUid(student.authUid);
 
+
         if (amount > Number(current.creditBalance || 0)) {
-            alert("The repayment cannot be greater than the student's outstanding credit.");
+
+            alert(
+                "The repayment cannot be greater than the student's outstanding credit."
+            );
+
             return;
         }
+
 
         try {
 
             const newCreditBalance =
                 Number(current.creditBalance || 0) - amount;
+
 
             await recordFinancialTransaction(
                 student,
@@ -826,12 +959,15 @@ if (repaymentForm) {
                 newCreditBalance
             );
 
+
             repaymentForm.reset();
 
             alert("Credit repayment recorded successfully.");
 
         } catch (error) {
+
             console.error("Repayment error:", error);
+
             alert("Could not record the repayment.");
         }
     });
@@ -839,7 +975,7 @@ if (repaymentForm) {
 
 
 // ============================================
-// 18. DISPLAY TRANSACTIONS
+// 17. DISPLAY TRANSACTIONS
 // ============================================
 
 function displayTransactions() {
@@ -848,14 +984,18 @@ function displayTransactions() {
 
     transactionList.innerHTML = "";
 
+
     if (transactions.length === 0) {
+
         transactionList.innerHTML = `
             <tr>
                 <td colspan="6">No transactions recorded yet.</td>
             </tr>
         `;
+
         return;
     }
+
 
     transactions.forEach(transaction => {
 
@@ -869,20 +1009,26 @@ function displayTransactions() {
                     value="${escapeHTML(transaction.id)}"
                 >
             </td>
+
             <td>${escapeHTML(transaction.admission)}</td>
+
             <td>${escapeHTML(transaction.studentName)}</td>
+
             <td>${escapeHTML(transaction.type)}</td>
+
             <td>${formatMoney(transaction.amount)}</td>
+
             <td>${escapeHTML(formatDate(transaction))}</td>
         `;
 
         transactionList.appendChild(row);
+
     });
 }
 
 
 // ============================================
-// 19. SELECT ALL TRANSACTIONS
+// 18. SELECT ALL TRANSACTIONS
 // ============================================
 
 if (selectAllTransactions) {
@@ -894,14 +1040,16 @@ if (selectAllTransactions) {
         );
 
         checkboxes.forEach(checkbox => {
+
             checkbox.checked = selectAllTransactions.checked;
+
         });
     });
 }
 
 
 // ============================================
-// 20. DELETE SELECTED TRANSACTIONS
+// 19. DELETE SELECTED TRANSACTIONS
 // ============================================
 
 if (deleteSelectedTransactions) {
@@ -912,14 +1060,19 @@ if (deleteSelectedTransactions) {
             ".transaction-checkbox:checked"
         );
 
+
         const selectedIds = Array.from(selected).map(
             checkbox => checkbox.value
         );
 
+
         if (selectedIds.length === 0) {
+
             alert("Select at least one transaction to delete.");
+
             return;
         }
+
 
         const confirmed = confirm(
             "Delete " + selectedIds.length +
@@ -928,29 +1081,42 @@ if (deleteSelectedTransactions) {
 
         if (!confirmed) return;
 
+
         try {
 
             const batch = writeBatch(db);
 
+
             selectedIds.forEach(id => {
+
                 batch.delete(
                     doc(db, "transactions", id)
                 );
+
             });
+
 
             await batch.commit();
 
+
             if (selectAllTransactions) {
+
                 selectAllTransactions.checked = false;
+
             }
 
+
             await loadAdminData();
+
             refreshDisplays();
+
 
             alert("Selected transaction history deleted.");
 
         } catch (error) {
+
             console.error("Transaction deletion error:", error);
+
             alert("Could not delete the selected transactions.");
         }
     });
@@ -958,7 +1124,7 @@ if (deleteSelectedTransactions) {
 
 
 // ============================================
-// 21. DISPLAY CREDIT RECORDS
+// 20. DISPLAY CREDIT RECORDS
 // ============================================
 
 function displayCredits() {
@@ -969,21 +1135,27 @@ function displayCredits() {
 
     creditList.innerHTML = "";
 
+
     const studentsWithCredit = students.filter(student => {
 
         const financialRecord = getBalanceByUid(student.authUid);
 
         return Number(financialRecord.creditBalance || 0) > 0;
+
     });
 
+
     if (studentsWithCredit.length === 0) {
+
         creditList.innerHTML = `
             <tr>
-                <td colspan="4">No outstanding credit.</td>
+                <td colspan="3">No outstanding credit.</td>
             </tr>
         `;
+
         return;
     }
+
 
     studentsWithCredit.forEach(student => {
 
@@ -991,168 +1163,248 @@ function displayCredits() {
 
         const row = document.createElement("tr");
 
+
         row.innerHTML = `
             <td>${escapeHTML(student.admission)}</td>
+
             <td>${escapeHTML(student.name)}</td>
-            <td>${escapeHTML(student.studentClass)}</td>
+
             <td>${formatMoney(financialRecord.creditBalance)}</td>
         `;
 
+
         creditList.appendChild(row);
+
     });
 }
 
 
 // ============================================
-// 22. UPDATE REPORTS AND DASHBOARD
+// 21. UPDATE REPORTS AND DASHBOARD
 // ============================================
 
 function updateReports() {
 
     let totalDeposits = 0;
+
     let totalSales = 0;
+
     let totalCredit = 0;
+
     let totalRepayments = 0;
+
 
     transactions.forEach(transaction => {
 
         const type = String(transaction.type || "").toLowerCase();
+
         const amount = Number(transaction.amount || 0);
 
+
         if (type === "deposit") {
+
             totalDeposits += amount;
+
         }
+
 
         if (type.startsWith("purchase")) {
+
             totalSales += amount;
+
         }
+
 
         if (type.startsWith("credit")) {
+
             totalCredit += amount;
+
         }
 
+
         if (type === "repayment") {
+
             totalRepayments += amount;
+
         }
+
     });
 
 
-    // Dashboard
+    // DASHBOARD ELEMENTS
+
     const totalStudentsElement = document.getElementById("total-students");
+
     const dashboardDeposits = document.getElementById("dashboard-deposits");
+
     const dashboardSales = document.getElementById("dashboard-sales");
+
     const dashboardCredit = document.getElementById("dashboard-credit");
 
+
     if (totalStudentsElement) {
+
         totalStudentsElement.textContent = students.length;
+
     }
+
 
     if (dashboardDeposits) {
+
         dashboardDeposits.textContent = formatMoney(totalDeposits);
+
     }
 
+
     if (dashboardSales) {
+
         dashboardSales.textContent = formatMoney(totalSales);
+
     }
+
 
     if (dashboardCredit) {
 
         const outstandingCredit = students.reduce((total, student) => {
+
             const financialRecord = getBalanceByUid(student.authUid);
 
             return total + Number(financialRecord.creditBalance || 0);
+
         }, 0);
 
+
         dashboardCredit.textContent = formatMoney(outstandingCredit);
+
     }
 
 
-    // Reports
+    // REPORT ELEMENTS
+
     const reportDeposits = document.getElementById("report-deposits");
+
     const reportSales = document.getElementById("report-sales");
+
     const reportCredit = document.getElementById("report-credit");
+
     const reportRepayments = document.getElementById("report-repayments");
 
+
     if (reportDeposits) {
+
         reportDeposits.textContent = formatMoney(totalDeposits);
+
     }
+
 
     if (reportSales) {
+
         reportSales.textContent = formatMoney(totalSales);
+
     }
+
 
     if (reportCredit) {
+
         reportCredit.textContent = formatMoney(totalCredit);
+
     }
 
+
     if (reportRepayments) {
+
         reportRepayments.textContent = formatMoney(totalRepayments);
+
     }
 }
 
 
 // ============================================
-// 23. REFRESH ALL ADMIN DISPLAYS
+// 22. REFRESH ALL ADMIN DISPLAYS
 // ============================================
 
 function refreshDisplays() {
 
     displayStudents();
-    populateStudentSelects();
+
     displayTransactions();
+
     displayCredits();
+
     updateReports();
+
 }
 
 
 // ============================================
-// 24. STUDENT PORTAL
+// 23. STUDENT PORTAL
 // ============================================
 
 async function loadStudentPortal(uid, student) {
 
     const nameDisplay = document.getElementById("student-name-display");
+
     const admissionDisplay = document.getElementById("student-admission-display");
+
     const classDisplay = document.getElementById("student-class-display");
+
     const balanceDisplay = document.getElementById("student-balance");
 
+
     if (nameDisplay) {
+
         nameDisplay.textContent = student.name;
+
     }
+
 
     if (admissionDisplay) {
+
         admissionDisplay.textContent = student.admission;
+
     }
+
 
     if (classDisplay) {
+
         classDisplay.textContent = student.studentClass;
+
     }
 
 
-    // Load only the signed-in student's balance
+    // LOAD ONLY THE SIGNED-IN STUDENT'S BALANCE
+
     const balanceDocument = await getDoc(
         doc(db, "balances", uid)
     );
 
+
     let balance = 0;
 
+
     if (balanceDocument.exists()) {
+
         balance = Number(balanceDocument.data().balance || 0);
+
     }
+
 
     if (balanceDisplay) {
+
         balanceDisplay.textContent = formatMoney(balance);
+
     }
 
 
-    // Display the student directory.
-    // No financial balances are included here.
+    // LOAD STUDENT DIRECTORY
+
     await displayStudentDirectory();
+
 }
 
 
 // ============================================
-// 25. STUDENT DIRECTORY
+// 24. STUDENT DIRECTORY
 // ============================================
 
 async function displayStudentDirectory() {
@@ -1161,114 +1413,67 @@ async function displayStudentDirectory() {
         "student-directory-list"
     );
 
+
     if (!directory) return;
 
+
     directory.innerHTML = "";
+
 
     const snapshot = await getDocs(
         collection(db, "students")
     );
 
-    const directoryStudents = snapshot.docs.map(document => document.data());
 
-    directoryStudents.sort((a, b) => {
-        return String(a.name || "").localeCompare(String(b.name || ""));
+    const directoryStudents = snapshot.docs.map(document => {
+
+        return document.data();
+
     });
 
+
+    directoryStudents.sort((a, b) => {
+
+        return String(a.name || "").localeCompare(String(b.name || ""));
+
+    });
+
+
     if (directoryStudents.length === 0) {
+
         directory.innerHTML = `
             <tr>
                 <td colspan="3">No students found.</td>
             </tr>
         `;
+
         return;
     }
+
 
     directoryStudents.forEach(student => {
 
         const row = document.createElement("tr");
 
+
         row.innerHTML = `
             <td>${escapeHTML(student.admission)}</td>
+
             <td>${escapeHTML(student.name)}</td>
+
             <td>${escapeHTML(student.studentClass)}</td>
         `;
 
+
         directory.appendChild(row);
+
     });
+
 }
 
 
 // ============================================
-// 26. ADMIN NAVIGATION
-// ============================================
-
-function showSection(sectionName) {
-
-    const sections = document.querySelectorAll(
-        "[id$='-section'], .content-section, .section"
-    );
-
-    sections.forEach(section => {
-
-        const sectionId = section.id
-            .replace("-section", "");
-
-        const dataSection = section.dataset.section;
-
-        const sectionKey = dataSection || sectionId;
-
-        section.hidden = sectionKey !== sectionName;
-    });
-
-
-    const navigationItems = document.querySelectorAll(
-        ".sidebar [data-section]"
-    );
-
-    navigationItems.forEach(item => {
-        item.classList.toggle(
-            "active",
-            item.dataset.section === sectionName
-        );
-    });
-}
-
-
-// Support sidebar items that use data-section attributes
-document.querySelectorAll(".sidebar [data-section]").forEach(item => {
-
-    item.addEventListener("click", function(event) {
-
-        event.preventDefault();
-
-        showSection(this.dataset.section);
-    });
-});
-
-
-// Support sidebar links such as href="#students"
-document.querySelectorAll(".sidebar a[href^='#']").forEach(item => {
-
-    item.addEventListener("click", function(event) {
-
-        const sectionName = this.getAttribute("href").substring(1);
-
-        if (!sectionName) return;
-
-        event.preventDefault();
-
-        showSection(sectionName);
-    });
-});
-
-
-// Make showSection available to existing inline HTML navigation
-window.showSection = showSection;
-
-
-// ============================================
-// 27. INITIAL ADMIN PAGE
+// 25. INITIAL MESSAGE
 // ============================================
 
 console.log("Smart Canteen Manager Firebase script loaded.");
