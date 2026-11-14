@@ -26,6 +26,7 @@ function saveStudents() {
 }
 
 // SAVE TRANSACTIONS
+// SAVE TRANSACTIONS
 function saveTransactions() {
     localStorage.setItem(
         "transactions",
@@ -63,6 +64,7 @@ function displayStudents() {
      
 // 5. DISPLAY STUDENTS WHEN PAGE OPENS
 displayStudents();
+displayTransactions();
 // DISPLAY TRANSACTION HISTORY
 function displayTransactions() {
     transactionList.textContent = "";
