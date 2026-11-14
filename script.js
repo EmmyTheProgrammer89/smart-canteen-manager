@@ -18,6 +18,9 @@ const studentList = document.getElementById("student-list");
 const depositForm = document.getElementById("deposit-form");
 const transactionList = document.getElementById("transaction-list");
 const purchaseForm = document.getElementById("purchase-form");
+const creditForm = document.getElementById("credit-form");
+const repaymentForm = document.getElementById("repayment-form");
+const creditList = document.getElementById("credit-list");
 // 3. SAVE STUDENTS
 function saveStudents() {
     localStorage.setItem(
@@ -251,6 +254,30 @@ purchaseForm.addEventListener("submit", function(event) {
     // UPDATE TABLES
     displayStudents();
     displayTransactions();
+    // DISPLAY OUTSTANDING STUDENT CREDIT
+function displayCredits() {
+    creditList.textContent = "";
+
+    students.forEach(student => {
+        const credit = Number(student.creditBalance) || 0;
+
+        if (credit > 0) {
+            const row = document.createElement("tr");
+
+            [
+                student.admission,
+                student.name,
+                credit.toLocaleString() + " RWF"
+            ].forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value;
+                row.appendChild(cell);
+            });
+
+            creditList.appendChild(row);
+        }
+    });
+}
 
     purchaseForm.reset();
 
