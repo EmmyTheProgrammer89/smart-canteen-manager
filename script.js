@@ -65,7 +65,7 @@ function displayStudents() {
      
 // 5. DISPLAY STUDENTS WHEN PAGE OPENS
 displayStudents();
-displayTransactions();
+
 // DISPLAY TRANSACTION HISTORY
 function displayTransactions() {
     transactionList.textContent = "";
@@ -88,8 +88,9 @@ function displayTransactions() {
         transactionList.appendChild(row);
     });
 }
-displayTransactions();
 
+// DISPLAY SAVED TRANSACTIONS
+displayTransactions();
 // 6. REGISTER STUDENT
 studentForm.addEventListener("submit", function(event) {
     event.preventDefault();
