@@ -343,7 +343,6 @@ if (depositForm) {
 
 }
 
-
 // 11. STUDENT PURCHASE
 
 if (purchaseForm) {
@@ -353,60 +352,44 @@ if (purchaseForm) {
         event.preventDefault();
 
         const admission = getValue("purchase-student-id");
-
         const description = getValue("purchase-description");
-
         const amount = Number(getValue("purchase-amount"));
 
         // FIND STUDENT
-
         const student = findStudent(admission);
 
         if (!student) {
-
             alert("Student not found! Check the admission number.");
-
             return;
         }
 
         // VALIDATE PRODUCT
-
         if (!description) {
-
             alert("Enter the product name!");
-
             return;
         }
 
         // VALIDATE AMOUNT
-
         if (!Number.isFinite(amount) || amount <= 0) {
-
             alert("Enter a valid purchase amount!");
-
             return;
         }
 
         // CHECK WALLET BALANCE
-
         const currentBalance = Number(student.balance) || 0;
 
         if (amount > currentBalance) {
-
             alert(
                 "Insufficient wallet balance! Current balance: " +
                 formatMoney(currentBalance)
             );
-
             return;
         }
 
         // DEDUCT MONEY
-
         student.balance = currentBalance - amount;
 
         // RECORD PURCHASE
-
         recordTransaction(
             student,
             "Purchase: " + description,
@@ -414,14 +397,13 @@ if (purchaseForm) {
         );
 
         // SAVE DATA
-
         saveStudents();
         saveTransactions();
 
         // UPDATE DISPLAYS
-
         refreshDisplays();
 
+        // CLEAR FORM
         purchaseForm.reset();
 
         alert("Purchase recorded successfully!");
@@ -429,7 +411,6 @@ if (purchaseForm) {
     });
 
 }
-
 
 // 12. RECORD STUDENT CREDIT PURCHASE
 
