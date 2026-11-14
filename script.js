@@ -573,3 +573,4 @@ refreshDisplays();
 // =============================================
 // END OF SMART CANTEEN MANAGER JAVASCRIPT
 // =============================================
+}); // CLOSE DOMContentLoaded
