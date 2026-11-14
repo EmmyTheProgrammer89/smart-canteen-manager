@@ -18,322 +18,414 @@
         <a href="#deposits-section">Deposits</a>
         <a href="#purchases-section">Purchases</a>
         <a href="#credit-section">Credit</a>
+        <a href="#transactions-section">Transactions</a>
         <a href="#reports-section">Reports</a>
     </aside>
 </div>
 
- <div class="main-content" id="dashboard-section">
+<div class="main-content" id="dashboard-section">
 
-        <header>
-            <h1>Dashboard</h1>
-            <p>Welcome to Smart Canteen Manager</p>
-        </header>
+    <!-- DASHBOARD HEADER -->
 
-        <section class="cards">
+    <header>
+        <h1>Dashboard</h1>
+        <p>Welcome to Smart Canteen Manager</p>
+    </header>
+
+
+    <!-- DASHBOARD CARDS -->
+
+    <section class="cards">
 
         <div class="card">
-    <h3>Total Students</h3>
-    <p id="total-students">0</p>
-           </div> 
-            <div class="card">
-                <h3>Total Deposits</h3>
-                <p>0 RWF</p>
-            </div>
-
-            <div class="card">
-                <h3>Total Sales</h3>
-                <p>0 RWF</p>
-            </div>
-
-            <div class="card">
-                <h3>Outstanding Credit</h3>
-                <p>0 RWF</p>
-            </div>
-
-        </section>
-
-        <section class="welcome">
-            <h2>Manage Your School Canteen</h2>
-            <p>
-                Record student deposits, purchases,
-                payments and outstanding credit.
-            </p>
-        </section>
-          <section class="students-section" id="students-section">
-
-            <h2>Student Management</h2>
-            <p>Register and manage school students.</p>
-
-            <form id="student-form">
-
-                <label for="admission">Admission Number</label>
-                <input type="text" id="admission" 
-                    placeholder="Automatically generated" readonly>
-
-                <label for="student-name">Full Name</label>
-                <input type="text" id="student-name"
-                    placeholder="Enter student name" required>
-
-                <label for="student-class">Class</label>
-                <input type="text" id="student-class"
-                    placeholder="Example: S4" required>
-
-                <label for="phone">Phone Number (Optional)</label>
-                <input type="tel" id="phone"
-                    placeholder="Enter phone number">
-
-                <button type="submit">Register Student</button>
-
-            </form>
-
-            <h3>Registered Students</h3>
-
-            <table>
-                <thead>
-                    <tr>
-                       <th>Admission Number</th>
-                       <th>Student Name</th>
-                       <th>Class</th>
-                       <th>Phone</th>
-                        <th>Balance (RWF)</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-
-                <tbody id="student-list">
-                </tbody>
-            </table>
-
-        </section>
-
-  <section id="deposits-section">
-    <h2>Student Deposit</h2>
-
-    <form id="deposit-form">
-
-        <label for="deposit-student-id">
-            Student ID:
-        </label>
-
-        <input
-            type="text"
-            id="deposit-student-id"
-            placeholder="Enter student admission number"
-            required
-        >
-
-        <label for="deposit-amount">
-            Deposit Amount (RWF):
-        </label>
-
-        <input
-            type="number"
-            id="deposit-amount"
-            placeholder="Enter amount"
-            min="1"
-            required
-        >
-
-        <button type="submit">
-            Add Deposit
-        </button>
-
-    </form>
-</section>
-    <!-- TRANSACTION HISTORY -->
-<section id="transactions-section">
-    <h2>Transaction History</h2>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Admission Number</th>
-                <th>Student Name</th>
-                <th>Transaction Type</th>
-                <th>Amount (RWF)</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-
-        <tbody id="transaction-list">
-        </tbody>
-    </table>
-</section>
-    <!-- PURCHASES SECTION -->
-<section id="purchases-section">
-    <h2>Record Student Purchase</h2>
-
-    <form id="purchase-form">
-
-        <label for="purchase-student-id">
-            Student Admission Number
-        </label>
-        <input
-            type="text"
-            id="purchase-student-id"
-            placeholder="Enter admission number"
-            required
-        >
-
-        <label for="purchase-description">
-            Product Purchased
-        </label>
-        <input
-            type="text"
-            id="purchase-description"
-            placeholder="Example: Bread"
-            required
-        >
-
-        <label for="purchase-amount">
-            Purchase Amount (RWF)
-        </label>
-        <input
-            type="number"
-            id="purchase-amount"
-            placeholder="Enter amount"
-            min="1"
-            required
-        >
-
-        <button type="submit">Record Purchase</button>
-
-    </form>
-</section>
-     <!-- CREDIT MANAGEMENT SECTION -->
-<section id="credit-section">
-
-    <h2>Credit Management</h2>
-    <p>Manage student purchases made on credit and repayments.</p>
-
-    <!-- RECORD CREDIT PURCHASE -->
-    <h3>Record Credit Purchase</h3>
-
-    <form id="credit-form">
-
-        <label for="credit-student-id">
-            Student Admission Number
-        </label>
-
-        <input
-            type="text"
-            id="credit-student-id"
-            placeholder="Enter admission number"
-            required
-        >
-
-        <label for="credit-description">
-            Product Purchased
-        </label>
-
-        <input
-            type="text"
-            id="credit-description"
-            placeholder="Example: Bread"
-            required
-        >
-
-        <label for="credit-amount">
-            Credit Amount (RWF)
-        </label>
-
-        <input
-            type="number"
-            id="credit-amount"
-            placeholder="Enter amount"
-            min="1"
-            required
-        >
-
-        <button type="submit">
-            Record Credit
-        </button>
-
-    </form>
-
-    <!-- RECORD CREDIT REPAYMENT -->
-    <h3>Credit Repayment</h3>
-
-    <form id="repayment-form">
-
-        <label for="repayment-student-id">
-            Student Admission Number
-        </label>
-
-        <input
-            type="text"
-            id="repayment-student-id"
-            placeholder="Enter admission number"
-            required
-        >
-
-        <label for="repayment-amount">
-            Repayment Amount (RWF)
-        </label>
-
-        <input
-            type="number"
-            id="repayment-amount"
-            placeholder="Enter repayment amount"
-            min="1"
-            required
-        >
-
-        <button type="submit">
-            Record Repayment
-        </button>
-
-    </form>
-
-    <!-- OUTSTANDING CREDIT TABLE -->
-    <h3>Outstanding Student Credit</h3>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Admission Number</th>
-                <th>Student Name</th>
-                <th>Outstanding Credit (RWF)</th>
-            </tr>
-        </thead>
-
-        <tbody id="credit-list">
-        </tbody>
-    </table>
-
-</section>
-
-<!-- REPORTS SECTION -->
-<section id="reports-section">
-
-    <h2>Financial Reports</h2>
-
-    <div class="cards">
+            <h3>Total Students</h3>
+            <p id="total-students">0</p>
+        </div>
 
         <div class="card">
             <h3>Total Deposits</h3>
-            <p id="report-deposits">0 RWF</p>
+            <p>0 RWF</p>
         </div>
 
         <div class="card">
             <h3>Total Sales</h3>
-            <p id="report-sales">0 RWF</p>
+            <p>0 RWF</p>
         </div>
 
         <div class="card">
             <h3>Outstanding Credit</h3>
-            <p id="report-credit">0 RWF</p>
+            <p>0 RWF</p>
         </div>
 
-        <div class="card">
-            <h3>Total Repayments</h3>
-            <p id="report-repayments">0 RWF</p>
+    </section>
+
+
+    <!-- WELCOME SECTION -->
+
+    <section class="welcome">
+        <h2>Manage Your School Canteen</h2>
+        <p>
+            Record student deposits, purchases,
+            payments and outstanding credit.
+        </p>
+    </section>
+
+
+    <!-- STUDENT MANAGEMENT -->
+
+    <section class="students-section" id="students-section">
+
+        <h2>Student Management</h2>
+        <p>Register and manage school students.</p>
+
+        <form id="student-form">
+
+            <label for="admission">Admission Number</label>
+
+            <input
+                type="text"
+                id="admission"
+                placeholder="Automatically generated"
+                readonly
+            >
+
+            <label for="student-name">Full Name</label>
+
+            <input
+                type="text"
+                id="student-name"
+                placeholder="Enter student name"
+                required
+            >
+
+            <label for="student-class">Class</label>
+
+            <input
+                type="text"
+                id="student-class"
+                placeholder="Example: S4"
+                required
+            >
+
+            <label for="phone">Phone Number (Optional)</label>
+
+            <input
+                type="tel"
+                id="phone"
+                placeholder="Enter phone number"
+            >
+
+            <button type="submit">Register Student</button>
+
+        </form>
+
+
+        <h3>Registered Students</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Admission Number</th>
+                    <th>Student Name</th>
+                    <th>Class</th>
+                    <th>Phone</th>
+                    <th>Balance (RWF)</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="student-list"></tbody>
+        </table>
+
+    </section>
+
+
+    <!-- DEPOSITS SECTION -->
+
+    <section id="deposits-section">
+
+        <h2>Student Deposit</h2>
+
+        <form id="deposit-form">
+
+            <label for="deposit-student-id">
+                Student ID:
+            </label>
+
+            <input
+                type="text"
+                id="deposit-student-id"
+                placeholder="Enter student admission number"
+                required
+            >
+
+            <label for="deposit-amount">
+                Deposit Amount (RWF):
+            </label>
+
+            <input
+                type="number"
+                id="deposit-amount"
+                placeholder="Enter amount"
+                min="1"
+                required
+            >
+
+            <button type="submit">
+                Add Deposit
+            </button>
+
+        </form>
+
+    </section>
+
+
+    <!-- TRANSACTION HISTORY -->
+
+    <section id="transactions-section">
+
+        <h2>Transaction History</h2>
+
+        <p>
+            Select the transactions you no longer need
+            and delete them.
+        </p>
+
+        <button
+            type="button"
+            id="delete-selected-transactions"
+        >
+            Delete Selected
+        </button>
+
+        <table>
+
+            <thead>
+                <tr>
+
+                    <th>
+                        <input
+                            type="checkbox"
+                            id="select-all-transactions"
+                            aria-label="Select all transactions"
+                        >
+                    </th>
+
+                    <th>Admission Number</th>
+                    <th>Student Name</th>
+                    <th>Transaction Type</th>
+                    <th>Amount (RWF)</th>
+                    <th>Date</th>
+
+                </tr>
+            </thead>
+
+            <tbody id="transaction-list"></tbody>
+
+        </table>
+
+    </section>
+
+
+    <!-- PURCHASES SECTION -->
+
+    <section id="purchases-section">
+
+        <h2>Record Student Purchase</h2>
+
+        <form id="purchase-form">
+
+            <label for="purchase-student-id">
+                Student Admission Number
+            </label>
+
+            <input
+                type="text"
+                id="purchase-student-id"
+                placeholder="Enter admission number"
+                required
+            >
+
+            <label for="purchase-description">
+                Product Purchased
+            </label>
+
+            <input
+                type="text"
+                id="purchase-description"
+                placeholder="Example: Bread"
+                required
+            >
+
+            <label for="purchase-amount">
+                Purchase Amount (RWF)
+            </label>
+
+            <input
+                type="number"
+                id="purchase-amount"
+                placeholder="Enter amount"
+                min="1"
+                required
+            >
+
+            <button type="submit">Record Purchase</button>
+
+        </form>
+
+    </section>
+
+
+    <!-- CREDIT MANAGEMENT SECTION -->
+
+    <section id="credit-section">
+
+        <h2>Credit Management</h2>
+
+        <p>
+            Manage student purchases made on credit and repayments.
+        </p>
+
+
+        <!-- RECORD CREDIT PURCHASE -->
+
+        <h3>Record Credit Purchase</h3>
+
+        <form id="credit-form">
+
+            <label for="credit-student-id">
+                Student Admission Number
+            </label>
+
+            <input
+                type="text"
+                id="credit-student-id"
+                placeholder="Enter admission number"
+                required
+            >
+
+            <label for="credit-description">
+                Product Purchased
+            </label>
+
+            <input
+                type="text"
+                id="credit-description"
+                placeholder="Example: Bread"
+                required
+            >
+
+            <label for="credit-amount">
+                Credit Amount (RWF)
+            </label>
+
+            <input
+                type="number"
+                id="credit-amount"
+                placeholder="Enter amount"
+                min="1"
+                required
+            >
+
+            <button type="submit">
+                Record Credit
+            </button>
+
+        </form>
+
+
+        <!-- RECORD CREDIT REPAYMENT -->
+
+        <h3>Credit Repayment</h3>
+
+        <form id="repayment-form">
+
+            <label for="repayment-student-id">
+                Student Admission Number
+            </label>
+
+            <input
+                type="text"
+                id="repayment-student-id"
+                placeholder="Enter admission number"
+                required
+            >
+
+            <label for="repayment-amount">
+                Repayment Amount (RWF)
+            </label>
+
+            <input
+                type="number"
+                id="repayment-amount"
+                placeholder="Enter repayment amount"
+                min="1"
+                required
+            >
+
+            <button type="submit">
+                Record Repayment
+            </button>
+
+        </form>
+
+
+        <!-- OUTSTANDING CREDIT TABLE -->
+
+        <h3>Outstanding Student Credit</h3>
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Admission Number</th>
+                    <th>Student Name</th>
+                    <th>Outstanding Credit (RWF)</th>
+                </tr>
+            </thead>
+
+            <tbody id="credit-list"></tbody>
+
+        </table>
+
+    </section>
+
+
+    <!-- REPORTS SECTION -->
+
+    <section id="reports-section">
+
+        <h2>Financial Reports</h2>
+
+        <div class="cards">
+
+            <div class="card">
+                <h3>Total Deposits</h3>
+                <p id="report-deposits">0 RWF</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Sales</h3>
+                <p id="report-sales">0 RWF</p>
+            </div>
+
+            <div class="card">
+                <h3>Outstanding Credit</h3>
+                <p id="report-credit">0 RWF</p>
+            </div>
+
+            <div class="card">
+                <h3>Total Repayments</h3>
+                <p id="report-repayments">0 RWF</p>
+            </div>
+
         </div>
 
-    </div>
+    </section>
 
-</section>
- </div>
-    <script src="script.js" defer></script>
+</div>
+
+<script src="script.js" defer></script>
+
 </body>
 </html>
