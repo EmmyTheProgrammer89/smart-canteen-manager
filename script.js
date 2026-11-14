@@ -17,6 +17,7 @@ const studentForm = document.getElementById("student-form");
 const studentList = document.getElementById("student-list");
 const depositForm = document.getElementById("deposit-form");
 const transactionList = document.getElementById("transaction-list");
+const purchaseForm = document.getElementById("purchase-form");
 // 3. SAVE STUDENTS
 function saveStudents() {
     localStorage.setItem(
@@ -178,4 +179,67 @@ displayTransactions();
     depositForm.reset();
 
     alert("Deposit successful!");
+});
+// 8. STUDENT PURCHASE
+purchaseForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const studentAdmission = document.getElementById(
+        "purchase-student-id"
+    ).value.trim();
+
+    const description = document.getElementById(
+        "purchase-description"
+    ).value.trim();
+
+    const amount = Number(document.getElementById(
+        "purchase-amount"
+    ).value);
+
+    // FIND STUDENT
+    const student = students.find(
+        student => student.admission === studentAdmission
+    );
+
+    if (!student) {
+        alert("Student not found!");
+        return;
+    }
+
+    // VALIDATE AMOUNT
+    if (!Number.isFinite(amount) || amount <= 0) {
+        alert("Enter a valid purchase amount!");
+        return;
+    }
+
+    // CHECK WALLET BALANCE
+    if (amount > (student.balance || 0)) {
+        alert("Insufficient wallet balance!");
+        return;
+    }
+
+    // DEDUCT PURCHASE AMOUNT
+    student.balance = (student.balance || 0) - amount;
+
+    // RECORD TRANSACTION
+    const transaction = {
+        admission: student.admission,
+        studentName: student.name,
+        type: "Purchase: " + description,
+        amount: amount,
+        date: new Date().toLocaleString()
+    };
+
+    transactions.push(transaction);
+
+    // SAVE AND UPDATE
+    saveStudents();
+    saveTransactions();
+
+    displayStudents();
+    displayTransactions();
+
+    purchaseForm.reset();
+
+    alert("Purchase recorded successfully!");
 });
