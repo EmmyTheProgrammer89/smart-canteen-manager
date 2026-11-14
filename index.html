@@ -159,6 +159,47 @@
         </tbody>
     </table>
 </section>
+    <!-- PURCHASES SECTION -->
+<section id="purchases-section">
+    <h2>Record Student Purchase</h2>
+
+    <form id="purchase-form">
+
+        <label for="purchase-student-id">
+            Student Admission Number
+        </label>
+        <input
+            type="text"
+            id="purchase-student-id"
+            placeholder="Enter admission number"
+            required
+        >
+
+        <label for="purchase-description">
+            Product Purchased
+        </label>
+        <input
+            type="text"
+            id="purchase-description"
+            placeholder="Example: Bread"
+            required
+        >
+
+        <label for="purchase-amount">
+            Purchase Amount (RWF)
+        </label>
+        <input
+            type="number"
+            id="purchase-amount"
+            placeholder="Enter amount"
+            min="1"
+            required
+        >
+
+        <button type="submit">Record Purchase</button>
+
+    </form>
+</section>
     <script src="script.js"></script>
 </body>
 </html>
