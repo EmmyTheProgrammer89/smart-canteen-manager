@@ -36,7 +36,7 @@
     <!-- DASHBOARD CARDS -->
 
   <section class="cards">
-
+      
     <div class="card">
         <h3>Total Students</h3>
         <p id="total-students">0</p>
@@ -180,51 +180,40 @@
 
 
     <!-- TRANSACTION HISTORY -->
+<section id="transactions-section">
 
-    <section id="transactions-section">
+    <h2>Transaction History</h2>
 
-        <h2>Transaction History</h2>
+    <div class="transaction-actions">
 
-        <p>
-            Select the transactions you no longer need
-            and delete them.
-        </p>
+        <label>
+            <input type="checkbox" id="select-all-transactions">
+            Select All
+        </label>
 
-        <button
-            type="button"
-            id="delete-selected-transactions"
-        >
+        <button type="button" id="delete-selected-transactions">
             Delete Selected
         </button>
 
-        <table>
+    </div>
 
-            <thead>
-                <tr>
+    <table>
+        <thead>
+            <tr>
+                <th>Select</th>
+                <th>Admission Number</th>
+                <th>Student Name</th>
+                <th>Transaction Type</th>
+                <th>Amount (RWF)</th>
+                <th>Date</th>
+            </tr>
+        </thead>
 
-                    <th>
-                        <input
-                            type="checkbox"
-                            id="select-all-transactions"
-                            aria-label="Select all transactions"
-                        >
-                    </th>
+        <tbody id="transaction-list">
+        </tbody>
+    </table>
 
-                    <th>Admission Number</th>
-                    <th>Student Name</th>
-                    <th>Transaction Type</th>
-                    <th>Amount (RWF)</th>
-                    <th>Date</th>
-
-                </tr>
-            </thead>
-
-            <tbody id="transaction-list"></tbody>
-
-        </table>
-
-    </section>
-
+</section>
 
     <!-- PURCHASES SECTION -->
 
