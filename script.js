@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", function() {
+
 // =============================================
 // SMART CANTEEN MANAGER
 // COMPLETE REVISED JAVASCRIPT
@@ -31,17 +32,13 @@ students.forEach(student => {
 
 const studentForm = document.getElementById("student-form");
 const studentList = document.getElementById("student-list");
+const admissionInput = document.getElementById("admission");
 
 const depositForm = document.getElementById("deposit-form");
-
 const transactionList = document.getElementById("transaction-list");
-
 const purchaseForm = document.getElementById("purchase-form");
-
 const creditForm = document.getElementById("credit-form");
-
 const repaymentForm = document.getElementById("repayment-form");
-
 const creditList = document.getElementById("credit-list");
 
 
@@ -94,12 +91,16 @@ function recordTransaction(student, type, amount) {
 
     transactions.push(transaction);
 }
-    // GENERATE NEXT ADMISSION NUMBER
+
+
+// 5. GENERATE NEXT ADMISSION NUMBER
+
 function generateAdmissionNumber() {
     let highestNumber = 0;
 
     students.forEach(student => {
-        const match = student.admission.match(/^ASYV(\d+)$/i);
+        const admission = String(student.admission || "");
+        const match = admission.match(/^ASYV(\d+)$/i);
 
         if (match) {
             highestNumber = Math.max(
@@ -113,7 +114,7 @@ function generateAdmissionNumber() {
 }
 
 
-// 5. DISPLAY STUDENTS
+// 6. DISPLAY STUDENTS
 
 function displayStudents() {
 
@@ -134,18 +135,13 @@ function displayStudents() {
         ];
 
         values.forEach(value => {
-
             const cell = document.createElement("td");
-
             cell.textContent = value;
-
             row.appendChild(cell);
         });
 
         studentList.appendChild(row);
     });
-
-    // UPDATE TOTAL STUDENTS
 
     const totalStudents = document.getElementById("total-students");
 
@@ -155,7 +151,7 @@ function displayStudents() {
 }
 
 
-// 6. DISPLAY TRANSACTIONS
+// 7. DISPLAY TRANSACTIONS
 
 function displayTransactions() {
 
@@ -176,11 +172,8 @@ function displayTransactions() {
         ];
 
         values.forEach(value => {
-
             const cell = document.createElement("td");
-
             cell.textContent = value ?? "";
-
             row.appendChild(cell);
         });
 
@@ -189,7 +182,7 @@ function displayTransactions() {
 }
 
 
-// 7. DISPLAY OUTSTANDING STUDENT CREDIT
+// 8. DISPLAY OUTSTANDING STUDENT CREDIT
 
 function displayCredits() {
 
@@ -200,8 +193,6 @@ function displayCredits() {
     students.forEach(student => {
 
         const credit = Number(student.creditBalance) || 0;
-
-        // Only display students who owe money
 
         if (credit > 0) {
 
@@ -214,11 +205,8 @@ function displayCredits() {
             ];
 
             values.forEach(value => {
-
                 const cell = document.createElement("td");
-
                 cell.textContent = value;
-
                 row.appendChild(cell);
             });
 
@@ -228,26 +216,33 @@ function displayCredits() {
 }
 
 
-// 8. REFRESH ALL DISPLAYS
+// 9. REFRESH ALL DISPLAYS
 
 function refreshDisplays() {
-
     displayStudents();
     displayTransactions();
     displayCredits();
-
 }
 
 
-// 9. REGISTER STUDENT
+// 10. REGISTER STUDENT
 
 if (studentForm) {
+
+    // SHOW NEXT ADMISSION NUMBER WHEN FORM OPENS
+
+    if (admissionInput) {
+        admissionInput.value = generateAdmissionNumber();
+    }
 
     studentForm.addEventListener("submit", function(event) {
 
         event.preventDefault();
 
-        const admission = getValue("admission");
+        const admission = admissionInput
+            ? admissionInput.value.trim()
+            : "";
+
         const name = getValue("student-name");
         const studentClass = getValue("student-class");
         const phone = getValue("phone");
@@ -255,35 +250,26 @@ if (studentForm) {
         // VALIDATE REQUIRED FIELDS
 
         if (!admission || !name || !studentClass) {
-
             alert("Please complete the required fields!");
-
             return;
         }
 
         // CHECK DUPLICATE ADMISSION NUMBER
 
-        const existingStudent = findStudent(admission);
-
-        if (existingStudent) {
-
+        if (findStudent(admission)) {
             alert("This admission number is already registered!");
-
             return;
         }
 
         // CREATE STUDENT
 
         const student = {
-
             admission: admission,
             name: name,
             studentClass: studentClass,
             phone: phone,
-
             balance: 0,
             creditBalance: 0
-
         };
 
         students.push(student);
@@ -291,22 +277,23 @@ if (studentForm) {
         // SAVE AND UPDATE
 
         saveStudents();
-
         refreshDisplays();
 
+        // CLEAR FORM AND GENERATE NEXT NUMBER
+
         studentForm.reset();
+
+        if (admissionInput) {
+            admissionInput.value = generateAdmissionNumber();
+        }
 
         alert("Student registered successfully!");
 
     });
-
 }
-    const admission = generateAdmissionNumber();
-
-document.getElementById("admission").value = admission;
 
 
-// 10. STUDENT DEPOSIT
+// 11. STUDENT DEPOSIT
 
 if (depositForm) {
 
@@ -315,7 +302,6 @@ if (depositForm) {
         event.preventDefault();
 
         const admission = getValue("deposit-student-id");
-
         const amount = Number(getValue("deposit-amount"));
 
         // FIND STUDENT
@@ -323,18 +309,14 @@ if (depositForm) {
         const student = findStudent(admission);
 
         if (!student) {
-
             alert("Student not found!");
-
             return;
         }
 
         // VALIDATE AMOUNT
 
         if (!Number.isFinite(amount) || amount <= 0) {
-
             alert("Enter a valid deposit amount!");
-
             return;
         }
 
@@ -360,10 +342,10 @@ if (depositForm) {
         alert("Deposit successful!");
 
     });
-
 }
 
-// 11. STUDENT PURCHASE
+
+// 12. STUDENT PURCHASE
 
 if (purchaseForm) {
 
@@ -376,6 +358,7 @@ if (purchaseForm) {
         const amount = Number(getValue("purchase-amount"));
 
         // FIND STUDENT
+
         const student = findStudent(admission);
 
         if (!student) {
@@ -384,18 +367,21 @@ if (purchaseForm) {
         }
 
         // VALIDATE PRODUCT
+
         if (!description) {
             alert("Enter the product name!");
             return;
         }
 
         // VALIDATE AMOUNT
+
         if (!Number.isFinite(amount) || amount <= 0) {
             alert("Enter a valid purchase amount!");
             return;
         }
 
         // CHECK WALLET BALANCE
+
         const currentBalance = Number(student.balance) || 0;
 
         if (amount > currentBalance) {
@@ -407,9 +393,11 @@ if (purchaseForm) {
         }
 
         // DEDUCT MONEY
+
         student.balance = currentBalance - amount;
 
         // RECORD PURCHASE
+
         recordTransaction(
             student,
             "Purchase: " + description,
@@ -417,22 +405,23 @@ if (purchaseForm) {
         );
 
         // SAVE DATA
+
         saveStudents();
         saveTransactions();
 
         // UPDATE DISPLAYS
+
         refreshDisplays();
 
-        // CLEAR FORM
         purchaseForm.reset();
 
         alert("Purchase recorded successfully!");
 
     });
-
 }
 
-// 12. RECORD STUDENT CREDIT PURCHASE
+
+// 13. RECORD STUDENT CREDIT PURCHASE
 
 if (creditForm) {
 
@@ -441,9 +430,7 @@ if (creditForm) {
         event.preventDefault();
 
         const admission = getValue("credit-student-id");
-
         const description = getValue("credit-description");
-
         const amount = Number(getValue("credit-amount"));
 
         // FIND STUDENT
@@ -451,18 +438,14 @@ if (creditForm) {
         const student = findStudent(admission);
 
         if (!student) {
-
             alert("Student not found!");
-
             return;
         }
 
         // VALIDATE INPUT
 
         if (!description || !Number.isFinite(amount) || amount <= 0) {
-
             alert("Enter a valid product and amount!");
-
             return;
         }
 
@@ -493,11 +476,10 @@ if (creditForm) {
         alert("Credit purchase recorded successfully!");
 
     });
-
 }
 
 
-// 13. RECORD CREDIT REPAYMENT
+// 14. RECORD CREDIT REPAYMENT
 
 if (repaymentForm) {
 
@@ -508,7 +490,6 @@ if (repaymentForm) {
         // GET FORM VALUES
 
         const admission = getValue("repayment-student-id");
-
         const amount = Number(getValue("repayment-amount"));
 
         // FIND STUDENT
@@ -516,18 +497,14 @@ if (repaymentForm) {
         const student = findStudent(admission);
 
         if (!student) {
-
             alert("Student not found!");
-
             return;
         }
 
         // VALIDATE AMOUNT
 
         if (!Number.isFinite(amount) || amount <= 0) {
-
             alert("Please enter a valid repayment amount!");
-
             return;
         }
 
@@ -536,20 +513,16 @@ if (repaymentForm) {
         const currentCredit = Number(student.creditBalance) || 0;
 
         if (currentCredit <= 0) {
-
             alert("This student has no outstanding credit!");
-
             return;
         }
 
         // PREVENT EXCESS REPAYMENT
 
         if (amount > currentCredit) {
-
             alert(
                 "Repayment cannot exceed the outstanding credit!"
             );
-
             return;
         }
 
@@ -574,18 +547,15 @@ if (repaymentForm) {
 
         refreshDisplays();
 
-        // CLEAR FORM
-
         repaymentForm.reset();
 
         alert("Credit repayment recorded successfully!");
 
     });
-
 }
 
 
-// 14. DISPLAY SAVED DATA WHEN PAGE OPENS
+// 15. DISPLAY SAVED DATA WHEN PAGE OPENS
 
 refreshDisplays();
 
@@ -593,4 +563,5 @@ refreshDisplays();
 // =============================================
 // END OF SMART CANTEEN MANAGER JAVASCRIPT
 // =============================================
+
 }); // CLOSE DOMContentLoaded
