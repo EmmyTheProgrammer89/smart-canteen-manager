@@ -1,4 +1,4 @@
-
+document.addEventListener("DOMContentLoaded", function() {
 // =============================================
 // SMART CANTEEN MANAGER
 // COMPLETE REVISED JAVASCRIPT
