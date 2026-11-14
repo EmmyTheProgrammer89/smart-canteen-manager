@@ -396,6 +396,81 @@ if (deleteSelectedTransactions) {
 
     });
 }
+    
+ //  CALCULATE FINANCIAL REPORTS
+
+function updateReports() {
+
+    let totalDeposits = 0;
+    let totalSales = 0;
+    let totalRepayments = 0;
+    let outstandingCredit = 0;
+
+    transactions.forEach(transaction => {
+
+        const amount = Number(transaction.amount) || 0;
+
+        if (transaction.type === "Deposit") {
+            totalDeposits += amount;
+        }
+
+        else if (
+            transaction.type.startsWith("Purchase:") ||
+            transaction.type.startsWith("Credit Purchase:")
+        ) {
+            totalSales += amount;
+        }
+
+        else if (transaction.type === "Credit Repayment") {
+            totalRepayments += amount;
+        }
+    });
+
+    students.forEach(student => {
+        outstandingCredit += Number(student.creditBalance) || 0;
+    });
+
+    // FINANCIAL REPORTS
+
+    const depositsElement = document.getElementById("report-deposits");
+    const salesElement = document.getElementById("report-sales");
+    const creditElement = document.getElementById("report-credit");
+    const repaymentsElement = document.getElementById("report-repayments");
+
+    if (depositsElement) {
+        depositsElement.textContent = formatMoney(totalDeposits);
+    }
+
+    if (salesElement) {
+        salesElement.textContent = formatMoney(totalSales);
+    }
+
+    if (creditElement) {
+        creditElement.textContent = formatMoney(outstandingCredit);
+    }
+
+    if (repaymentsElement) {
+        repaymentsElement.textContent = formatMoney(totalRepayments);
+    }
+
+    // DASHBOARD CARDS
+
+    const dashboardDeposits = document.getElementById("dashboard-deposits");
+    const dashboardSales = document.getElementById("dashboard-sales");
+    const dashboardCredit = document.getElementById("dashboard-credit");
+
+    if (dashboardDeposits) {
+        dashboardDeposits.textContent = formatMoney(totalDeposits);
+    }
+
+    if (dashboardSales) {
+        dashboardSales.textContent = formatMoney(totalSales);
+    }
+
+    if (dashboardCredit) {
+        dashboardCredit.textContent = formatMoney(outstandingCredit);
+    }
+}
 
 
 // 11. DISPLAY OUTSTANDING STUDENT CREDIT
