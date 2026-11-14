@@ -3,7 +3,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // =============================================
 // SMART CANTEEN MANAGER
-// COMPLETE CORRECTED JAVASCRIPT
+// COMPLETE JAVASCRIPT WITH SELECTIVE
+// TRANSACTION HISTORY DELETION
 // =============================================
 
 
@@ -21,8 +22,6 @@ function loadData(key) {
 
 let students = loadData("students");
 let transactions = loadData("transactions");
-
-// Ensure older student records have required fields
 
 students.forEach(student => {
     student.balance = Number(student.balance) || 0;
@@ -44,6 +43,12 @@ const creditForm = document.getElementById("credit-form");
 const repaymentForm = document.getElementById("repayment-form");
 
 const creditList = document.getElementById("credit-list");
+
+const selectAllTransactions =
+    document.getElementById("select-all-transactions");
+
+const deleteSelectedTransactions =
+    document.getElementById("delete-selected-transactions");
 
 
 // 3. SAVE DATA
@@ -154,8 +159,6 @@ function displayStudents() {
             <td>${formatMoney(student.balance)}</td>
         `;
 
-        // ACTION COLUMN
-
         const actionCell = document.createElement("td");
 
         const deleteButton = document.createElement("button");
@@ -184,15 +187,12 @@ if (studentList) {
         if (!button) return;
 
         const admission = button.dataset.admission;
-
         const student = findStudent(admission);
 
         if (!student) {
             alert("Student not found!");
             return;
         }
-
-        // PROTECT OUTSTANDING CREDIT
 
         if (Number(student.creditBalance) > 0) {
 
@@ -204,8 +204,6 @@ if (studentList) {
             return;
         }
 
-        // CONFIRM DELETION
-
         const confirmed = confirm(
             "Are you sure you want to delete " +
             student.name + " (" + admission + ")?\n\n" +
@@ -215,16 +213,11 @@ if (studentList) {
 
         if (!confirmed) return;
 
-        // REMOVE STUDENT ACCOUNT ONLY
-
         students = students.filter(
             item => item.admission !== admission
         );
 
-        // TRANSACTION HISTORY IS NOT DELETED
-
         saveStudents();
-
         refreshDisplays();
 
         alert(
@@ -244,9 +237,24 @@ function displayTransactions() {
 
     transactionList.innerHTML = "";
 
-    transactions.forEach(transaction => {
+    transactions.forEach((transaction, index) => {
 
         const row = document.createElement("tr");
+
+        // CHECKBOX COLUMN
+
+        const checkboxCell = document.createElement("td");
+
+        const checkbox = document.createElement("input");
+
+        checkbox.type = "checkbox";
+        checkbox.className = "transaction-checkbox";
+        checkbox.dataset.index = index;
+
+        checkboxCell.appendChild(checkbox);
+        row.appendChild(checkboxCell);
+
+        // TRANSACTION INFORMATION
 
         const values = [
             transaction.admission,
@@ -266,10 +274,131 @@ function displayTransactions() {
 
         transactionList.appendChild(row);
     });
+
+    updateSelectAllCheckbox();
 }
 
 
-// 9. DISPLAY OUTSTANDING STUDENT CREDIT
+// 9. SELECT ALL TRANSACTIONS
+
+function updateSelectAllCheckbox() {
+
+    if (!selectAllTransactions || !transactionList) return;
+
+    const checkboxes = transactionList.querySelectorAll(
+        ".transaction-checkbox"
+    );
+
+    const selectedCheckboxes = transactionList.querySelectorAll(
+        ".transaction-checkbox:checked"
+    );
+
+    selectAllTransactions.checked =
+        checkboxes.length > 0 &&
+        checkboxes.length === selectedCheckboxes.length;
+
+    selectAllTransactions.indeterminate =
+        selectedCheckboxes.length > 0 &&
+        selectedCheckboxes.length < checkboxes.length;
+}
+
+if (selectAllTransactions) {
+
+    selectAllTransactions.addEventListener("change", function() {
+
+        const checkboxes = transactionList
+            ? transactionList.querySelectorAll(".transaction-checkbox")
+            : [];
+
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAllTransactions.checked;
+        });
+
+        updateSelectAllCheckbox();
+
+    });
+}
+
+
+// UPDATE SELECT ALL WHEN INDIVIDUAL CHECKBOXES CHANGE
+
+if (transactionList) {
+
+    transactionList.addEventListener("change", function(event) {
+
+        if (event.target.classList.contains("transaction-checkbox")) {
+            updateSelectAllCheckbox();
+        }
+
+    });
+}
+
+
+// 10. DELETE SELECTED TRANSACTIONS
+
+if (deleteSelectedTransactions) {
+
+    deleteSelectedTransactions.addEventListener("click", function() {
+
+        if (!transactionList) return;
+
+        const selectedCheckboxes = transactionList.querySelectorAll(
+            ".transaction-checkbox:checked"
+        );
+
+        if (selectedCheckboxes.length === 0) {
+
+            alert("Please select at least one transaction to delete!");
+
+            return;
+        }
+
+        const confirmed = confirm(
+            "Are you sure you want to delete " +
+            selectedCheckboxes.length +
+            " selected transaction(s)?\n\n" +
+            "This action cannot be undone.\n\n" +
+            "Student wallet and credit balances will NOT change."
+        );
+
+        if (!confirmed) return;
+
+        // GET SELECTED TRANSACTION INDEXES
+
+        const selectedIndexes = new Set(
+            Array.from(selectedCheckboxes).map(checkbox =>
+                Number(checkbox.dataset.index)
+            )
+        );
+
+        // REMOVE ONLY SELECTED TRANSACTIONS
+
+        transactions = transactions.filter(
+            (transaction, index) => !selectedIndexes.has(index)
+        );
+
+        // SAVE UPDATED HISTORY
+
+        saveTransactions();
+
+        // REFRESH TRANSACTION TABLE
+
+        displayTransactions();
+
+        // RESET SELECT ALL
+
+        if (selectAllTransactions) {
+            selectAllTransactions.checked = false;
+            selectAllTransactions.indeterminate = false;
+        }
+
+        alert("Selected transaction history deleted successfully!");
+
+    });
+}
+
+
+// 11. DISPLAY OUTSTANDING STUDENT CREDIT
 
 function displayCredits() {
 
@@ -305,15 +434,13 @@ function displayCredits() {
 }
 
 
-// 10. REFRESH ALL DISPLAYS
+// 12. REFRESH ALL DISPLAYS
 
 function refreshDisplays() {
 
     displayStudents();
     displayTransactions();
     displayCredits();
-
-    // UPDATE TOTAL STUDENTS
 
     const totalStudents = document.getElementById("total-students");
 
@@ -323,11 +450,9 @@ function refreshDisplays() {
 }
 
 
-// 11. REGISTER STUDENT
+// 13. REGISTER STUDENT
 
 if (studentForm) {
-
-    // SHOW NEXT ADMISSION NUMBER
 
     if (admissionInput) {
         admissionInput.value = generateAdmissionNumber();
@@ -345,23 +470,17 @@ if (studentForm) {
         const studentClass = getValue("student-class");
         const phone = getValue("phone");
 
-        // VALIDATE REQUIRED FIELDS
-
         if (!admission || !name || !studentClass) {
 
             alert("Please complete the required fields!");
             return;
         }
 
-        // CHECK DUPLICATE ADMISSION NUMBER
-
         if (findStudent(admission)) {
 
             alert("This admission number is already registered!");
             return;
         }
-
-        // CREATE STUDENT
 
         const student = {
             admission: admission,
@@ -374,8 +493,6 @@ if (studentForm) {
 
         students.push(student);
 
-        // SAVE LAST USED ADMISSION NUMBER
-
         const numberMatch = admission.match(/^ASYV(\d+)$/i);
 
         if (numberMatch) {
@@ -385,12 +502,8 @@ if (studentForm) {
             );
         }
 
-        // SAVE AND UPDATE
-
         saveStudents();
         refreshDisplays();
-
-        // CLEAR FORM AND SHOW NEXT NUMBER
 
         studentForm.reset();
 
@@ -404,7 +517,7 @@ if (studentForm) {
 }
 
 
-// 12. STUDENT DEPOSIT
+// 14. STUDENT DEPOSIT
 
 if (depositForm) {
 
@@ -427,8 +540,6 @@ if (depositForm) {
             return;
         }
 
-        // ADD MONEY TO WALLET
-
         student.balance = (Number(student.balance) || 0) + amount;
 
         recordTransaction(student, "Deposit", amount);
@@ -446,7 +557,7 @@ if (depositForm) {
 }
 
 
-// 13. STUDENT PURCHASE
+// 15. STUDENT PURCHASE
 
 if (purchaseForm) {
 
@@ -475,8 +586,6 @@ if (purchaseForm) {
             return;
         }
 
-        // CHECK WALLET BALANCE
-
         const currentBalance = Number(student.balance) || 0;
 
         if (amount > currentBalance) {
@@ -488,8 +597,6 @@ if (purchaseForm) {
 
             return;
         }
-
-        // DEDUCT MONEY
 
         student.balance = currentBalance - amount;
 
@@ -512,7 +619,7 @@ if (purchaseForm) {
 }
 
 
-// 14. RECORD STUDENT CREDIT PURCHASE
+// 16. RECORD STUDENT CREDIT PURCHASE
 
 if (creditForm) {
 
@@ -536,8 +643,6 @@ if (creditForm) {
             return;
         }
 
-        // ADD TO OUTSTANDING CREDIT
-
         student.creditBalance =
             (Number(student.creditBalance) || 0) + amount;
 
@@ -560,7 +665,7 @@ if (creditForm) {
 }
 
 
-// 15. RECORD CREDIT REPAYMENT
+// 17. RECORD CREDIT REPAYMENT
 
 if (repaymentForm) {
 
@@ -583,16 +688,12 @@ if (repaymentForm) {
             return;
         }
 
-        // CHECK OUTSTANDING CREDIT
-
         const currentCredit = Number(student.creditBalance) || 0;
 
         if (currentCredit <= 0) {
             alert("This student has no outstanding credit!");
             return;
         }
-
-        // PREVENT EXCESS REPAYMENT
 
         if (amount > currentCredit) {
 
@@ -602,8 +703,6 @@ if (repaymentForm) {
 
             return;
         }
-
-        // REDUCE CREDIT BALANCE
 
         student.creditBalance = currentCredit - amount;
 
