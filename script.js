@@ -331,7 +331,19 @@ function displayCredits() {
 
 function refreshDisplays() {
 
-    displayStudents();
+    displayStudents(
+        // ACTION COLUMN
+const actionCell = document.createElement("td");
+
+const deleteButton = document.createElement("button");
+deleteButton.textContent = "Delete";
+deleteButton.type = "button";
+deleteButton.className = "delete-student-btn";
+deleteButton.dataset.admission = student.admission;
+
+actionCell.appendChild(deleteButton);
+row.appendChild(actionCell);
+    );
     displayTransactions();
     displayCredits();
 
