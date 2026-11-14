@@ -179,6 +179,30 @@ saveTransactions();
 saveStudents();
 displayStudents();
 displayTransactions();
+    // DISPLAY OUTSTANDING STUDENT CREDIT
+function displayCredits() {
+    creditList.textContent = "";
+
+    students.forEach(student => {
+        const credit = Number(student.creditBalance) || 0;
+
+        if (credit > 0) {
+            const row = document.createElement("tr");
+
+            [
+                student.admission,
+                student.name,
+                credit.toLocaleString() + " RWF"
+            ].forEach(value => {
+                const cell = document.createElement("td");
+                cell.textContent = value;
+                row.appendChild(cell);
+            });
+
+            creditList.appendChild(row);
+        }
+    });
+}
 
     depositForm.reset();
 
@@ -250,7 +274,7 @@ purchaseForm.addEventListener("submit", function(event) {
     // SAVE DATA
     saveStudents();
     saveTransactions();
-
+    displayCredits();
     // UPDATE TABLES
     displayStudents();
     displayTransactions();
@@ -282,4 +306,62 @@ function displayCredits() {
     purchaseForm.reset();
 
     alert("Purchase recorded successfully!");
+});
+// 9. RECORD STUDENT CREDIT PURCHASE
+creditForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const admission = document.getElementById(
+        "credit-student-id"
+    ).value.trim();
+
+    const description = document.getElementById(
+        "credit-description"
+    ).value.trim();
+
+    const amount = Number(document.getElementById(
+        "credit-amount"
+    ).value);
+
+    // FIND STUDENT
+    const student = students.find(
+        student => student.admission === admission
+    );
+
+    if (!student) {
+        alert("Student not found!");
+        return;
+    }
+
+    // VALIDATE INPUT
+    if (!description || !Number.isFinite(amount) || amount <= 0) {
+        alert("Enter a valid product and amount!");
+        return;
+    }
+
+    // ADD TO OUTSTANDING CREDIT
+    student.creditBalance =
+        (Number(student.creditBalance) || 0) + amount;
+
+    // RECORD TRANSACTION
+    const transaction = {
+        admission: student.admission,
+        studentName: student.name,
+        type: "Credit Purchase: " + description,
+        amount: amount,
+        date: new Date().toLocaleString()
+    };
+
+    transactions.push(transaction);
+
+    // SAVE DATA
+    saveStudents();
+    saveTransactions();
+
+    displayCredits();
+    displayTransactions();
+
+    creditForm.reset();
+
+    alert("Credit purchase recorded successfully!");
 });
