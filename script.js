@@ -386,3 +386,67 @@ creditForm.addEventListener("submit", function(event) {
 
     alert("Credit repayment recorded successfully!");
 });
+// 10. RECORD CREDIT REPAYMENT
+repaymentForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const admission = document.getElementById(
+        "repayment-student-id"
+    ).value.trim();
+
+    const amount = Number(document.getElementById(
+        "repayment-amount"
+    ).value);
+
+    // FIND STUDENT
+    const student = students.find(
+        s => s.admission === admission
+    );
+
+    if (!student) {
+        alert("Student not found!");
+        return;
+    }
+
+    // VALIDATE REPAYMENT
+    if (!Number.isFinite(amount) || amount <= 0) {
+        alert("Enter a valid repayment amount!");
+        return;
+    }
+
+    const currentCredit = Number(student.creditBalance) || 0;
+
+    if (currentCredit <= 0) {
+        alert("This student has no outstanding credit!");
+        return;
+    }
+
+    if (amount > currentCredit) {
+        alert("Repayment cannot exceed outstanding credit!");
+        return;
+    }
+
+    // REDUCE STUDENT CREDIT
+    student.creditBalance = currentCredit - amount;
+
+    // RECORD TRANSACTION
+    transactions.push({
+        admission: student.admission,
+        studentName: student.name,
+        type: "Credit Repayment",
+        amount: amount,
+        date: new Date().toLocaleString()
+    });
+
+    // SAVE DATA
+    saveStudents();
+    saveTransactions();
+
+    // REFRESH DISPLAY
+    displayCredits();
+    displayTransactions();
+
+    repaymentForm.reset();
+
+    alert("Credit repayment recorded successfully!");
+});
