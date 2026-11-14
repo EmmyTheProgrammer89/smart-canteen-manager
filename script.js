@@ -386,34 +386,29 @@ creditForm.addEventListener("submit", function(event) {
 
     alert("Credit repayment recorded successfully!");
 });
-// 10. RECORD CREDIT REPAYMENT
+ // 10. RECORD CREDIT REPAYMENT
 repaymentForm.addEventListener("submit", function(event) {
     event.preventDefault();
 
-    const admission = document.getElementById(
-        "repayment-student-id"
-    ).value.trim();
-
-    const amount = Number(document.getElementById(
-        "repayment-amount"
-    ).value);
+    // GET FORM VALUES
+    const admission = document.getElementById("repayment-student-id").value.trim();
+    const amount = Number(document.getElementById("repayment-amount").value);
 
     // FIND STUDENT
-    const student = students.find(
-        s => s.admission === admission
-    );
+    const student = students.find(s => s.admission === admission);
 
     if (!student) {
         alert("Student not found!");
         return;
     }
 
-    // VALIDATE REPAYMENT
+    // VALIDATE AMOUNT
     if (!Number.isFinite(amount) || amount <= 0) {
-        alert("Enter a valid repayment amount!");
+        alert("Please enter a valid repayment amount!");
         return;
     }
 
+    // CHECK OUTSTANDING CREDIT
     const currentCredit = Number(student.creditBalance) || 0;
 
     if (currentCredit <= 0) {
@@ -422,30 +417,33 @@ repaymentForm.addEventListener("submit", function(event) {
     }
 
     if (amount > currentCredit) {
-        alert("Repayment cannot exceed outstanding credit!");
+        alert("Repayment cannot exceed the outstanding credit!");
         return;
     }
 
-    // REDUCE STUDENT CREDIT
+    // UPDATE CREDIT BALANCE
     student.creditBalance = currentCredit - amount;
 
     // RECORD TRANSACTION
-    transactions.push({
+    const transaction = {
         admission: student.admission,
         studentName: student.name,
         type: "Credit Repayment",
         amount: amount,
         date: new Date().toLocaleString()
-    });
+    };
+
+    transactions.push(transaction);
 
     // SAVE DATA
     saveStudents();
     saveTransactions();
 
-    // REFRESH DISPLAY
+    // UPDATE DISPLAYS
     displayCredits();
     displayTransactions();
 
+    // CLEAR FORM
     repaymentForm.reset();
 
     alert("Credit repayment recorded successfully!");
