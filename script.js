@@ -90,6 +90,7 @@ const statisticsPeriod = document.getElementById("statistics-period");
 let students = [];
 let balances = {};
 let transactions = [];
+let feedbacks = [];
 
 let registrationInProgress = false;
 let currentStudentUid = null;
@@ -544,6 +545,21 @@ async function loadAdminData() {
 
 
     transactions.sort((a, b) => {
+        return getDateValue(b) - getDateValue(a);
+    });
+
+
+    // Load feedback submitted by students
+    const feedbackSnapshot = await getDocs(
+        collection(db, "feedback")
+    );
+
+    feedbacks = feedbackSnapshot.docs.map(document => ({
+        ...document.data(),
+        id: document.id
+    }));
+
+    feedbacks.sort((a, b) => {
         return getDateValue(b) - getDateValue(a);
     });
 
@@ -1102,21 +1118,15 @@ async function recordFinancialTransaction(
 }
 
 
-
 // ============================================
 // 16. DEPOSIT MONEY
 // ============================================
-
-let depositProcessing = false;
 
 if (depositForm) {
 
     depositForm.addEventListener("submit", async function(event) {
 
         event.preventDefault();
-
-        // Prevent duplicate submissions
-        if (depositProcessing) return;
 
         const admission = getValue("deposit-student-id");
         const amount = Number(getValue("deposit-amount"));
@@ -1136,17 +1146,6 @@ if (depositForm) {
         if (!Number.isFinite(amount) || amount <= 0) {
             alert("Enter a valid deposit amount.");
             return;
-        }
-
-        // Lock the form while processing
-        depositProcessing = true;
-
-        const depositButton = depositForm.querySelector(
-            'button[type="submit"], input[type="submit"]'
-        );
-
-        if (depositButton) {
-            depositButton.disabled = true;
         }
 
         try {
@@ -1173,19 +1172,9 @@ if (depositForm) {
             console.error("Deposit error:", error);
 
             alert("Could not record the deposit.");
-
-        } finally {
-
-            // Allow the next deposit
-            depositProcessing = false;
-
-            if (depositButton) {
-                depositButton.disabled = false;
-            }
         }
     });
 }
-
 
 
 // ============================================
@@ -1960,6 +1949,54 @@ if (statisticsPeriod) {
 
 
 // ============================================
+// DISPLAY STUDENT FEEDBACK (ADMIN)
+// ============================================
+
+function displayFeedback() {
+
+    const feedbackList = document.getElementById("feedback-list");
+
+    if (!feedbackList) return;
+
+    feedbackList.innerHTML = "";
+
+    if (feedbacks.length === 0) {
+
+        feedbackList.innerHTML = `
+            <tr>
+                <td colspan="7">No feedback received yet.</td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    feedbacks.forEach(feedback => {
+
+        const row = document.createElement("tr");
+        const reviewed = feedback.status === "Reviewed";
+
+        row.innerHTML = `
+            <td>${escapeHTML(feedback.name || "")}</td>
+            <td>${escapeHTML(feedback.email || "")}</td>
+            <td>${escapeHTML(feedback.category || "General")}</td>
+            <td>${escapeHTML(feedback.message || "")}</td>
+            <td>${escapeHTML(formatDate(feedback))}</td>
+            <td>${reviewed ? "Reviewed" : "New"}</td>
+            <td>
+                ${reviewed
+                    ? "Completed"
+                    : `<button type="button" class="review-feedback" data-id="${escapeHTML(feedback.id)}">Mark as Reviewed</button>`
+                }
+            </td>
+        `;
+
+        feedbackList.appendChild(row);
+    });
+}
+
+
+// ============================================
 // 28. REFRESH ALL ADMIN DISPLAYS
 // ============================================
 
@@ -1968,6 +2005,8 @@ function refreshDisplays() {
     displayStudents();
 
     displayTransactions();
+
+    displayFeedback();
 
     displayCredits();
 
@@ -2226,43 +2265,129 @@ async function displayStudentDirectory() {
 
 
 // ============================================
-// 32. APPLICATION READY
+// 32. STUDENT FEEDBACK SUBMISSION
+// ============================================
+
+const feedbackForm = document.getElementById("feedback-form");
+
+if (feedbackForm) {
+
+    feedbackForm.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const user = auth.currentUser;
+        const name = getValue("feedback-name");
+        const email = getValue("feedback-email").toLowerCase();
+        const category = getValue("feedback-category") || "General";
+        const message = getValue("feedback-message");
+        const statusElement = document.getElementById("feedback-status");
+
+        if (!user || !user.emailVerified) {
+            if (statusElement) {
+                statusElement.textContent = "Please log in with your verified student account before submitting feedback.";
+            }
+            return;
+        }
+
+        if (!name || !email || !message) {
+            if (statusElement) {
+                statusElement.textContent = "Please complete all feedback fields.";
+            }
+            return;
+        }
+
+        try {
+
+            if (statusElement) {
+                statusElement.textContent = "Submitting your feedback...";
+            }
+
+            const feedbackReference = doc(collection(db, "feedback"));
+            const batch = writeBatch(db);
+
+            batch.set(feedbackReference, {
+                name: name,
+                email: email,
+                category: category,
+                message: message,
+                userUid: user.uid,
+                status: "New",
+                date: new Date().toISOString(),
+                createdAt: serverTimestamp()
+            });
+
+            await batch.commit();
+
+            if (statusElement) {
+                statusElement.textContent = "Thank you! Your feedback has been submitted successfully.";
+            }
+
+            feedbackForm.reset();
+
+        } catch (error) {
+
+            console.error("Feedback submission error:", error);
+
+            if (statusElement) {
+                statusElement.textContent = "Unable to submit feedback. Please try again or contact the administrator.";
+            }
+        }
+    });
+}
+
+
+// ============================================
+// 33. ADMIN MARKS FEEDBACK AS REVIEWED
+// ============================================
+
+const feedbackList = document.getElementById("feedback-list");
+
+if (feedbackList) {
+
+    feedbackList.addEventListener("click", async function(event) {
+
+        const button = event.target.closest(".review-feedback");
+
+        if (!button) return;
+
+        const feedbackId = button.dataset.id;
+
+        if (!feedbackId) return;
+
+        try {
+
+            button.disabled = true;
+            button.textContent = "Updating...";
+
+            const feedbackReference = doc(db, "feedback", feedbackId);
+            const batch = writeBatch(db);
+
+            batch.update(feedbackReference, {
+                status: "Reviewed",
+                reviewedAt: serverTimestamp()
+            });
+
+            await batch.commit();
+
+            await loadAdminData();
+            refreshDisplays();
+
+        } catch (error) {
+
+            console.error("Feedback review error:", error);
+            alert("Could not update feedback status. Check your Firebase rules and try again.");
+            button.disabled = false;
+            button.textContent = "Mark as Reviewed";
+        }
+    });
+}
+
+
+// ============================================
+// 34. APPLICATION READY
 // ============================================
 
 console.log(
     "Smart Canteen Manager Firebase application loaded successfully."
 );
-
-const feedbackForm = document.getElementById("feedback-form");
-
-feedbackForm.addEventListener("submit", function(event) {
-    event.preventDefault();
-
-    const name = document.getElementById("feedback-name").value;
-    const email = document.getElementById("feedback-email").value;
-    const message = document.getElementById("feedback-message").value;
-
-    const feedback = {
-        name: name,
-        email: email,
-        message: message,
-        date: new Date().toLocaleString()
-    };
-
-    let feedbacks = JSON.parse(
-        localStorage.getItem("feedbacks")
-    ) || [];
-
-    feedbacks.push(feedback);
-
-    localStorage.setItem(
-        "feedbacks",
-        JSON.stringify(feedbacks)
-    );
-
-    document.getElementById("feedback-status").textContent =
-        "Thank you! Your feedback has been saved.";
-
-    feedbackForm.reset();
-});
-
