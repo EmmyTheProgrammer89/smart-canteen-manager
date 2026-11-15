@@ -37,14 +37,14 @@ body {
     padding: 20px;
     background: linear-gradient(135deg, #123b5d, #25658a
     ),
-        url("images/login-background.jpg");
+    
 
 }
 
 .login-container {
     width: 100%;
     max-width: 420px;
-    background-color: white;
+    background-color: blue;
     padding: 40px 30px;
     border-radius: 12px;
     box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15);
@@ -545,4 +545,72 @@ table input[type="checkbox"] {
         font-size: 22px;
     }
 
+}
+
+/* FOOTER */
+.footer {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    background: #123b5d;
+    color: white;
+    padding: 35px 25px 15px;
+    box-sizing: border-box;
+    margin-top: 40px;
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.footer-info,
+.feedback-section {
+    flex: 1;
+    min-width: 220px;
+}
+
+.footer h3 {
+    margin-bottom: 15px;
+}
+
+.footer a {
+    color: #80d8ff;
+    text-decoration: none;
+}
+
+.feedback-section input,
+.feedback-section textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: none;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.feedback-section textarea {
+    resize: vertical;
+}
+
+.feedback-section button {
+    padding: 12px 20px;
+    background: #16a085;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.feedback-section button:hover {
+    background: #13856e;
+}
+
+.footer-bottom {
+    text-align: center;
+    border-top: 1px solid #ffffff40;
+    margin-top: 25px;
+    padding-top: 15px;
 }
