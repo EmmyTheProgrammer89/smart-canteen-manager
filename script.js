@@ -952,8 +952,6 @@ function displayStudents() {
         studentList.appendChild(row);
     });
 }
-
-
 // ============================================
 // 14. DELETE STUDENT
 // ============================================
