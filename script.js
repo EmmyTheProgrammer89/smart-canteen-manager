@@ -1,4 +1,4 @@
-```javascript
+
 // ============================================
 // SMART CANTEEN MANAGER
 // FIREBASE VERSION
@@ -63,6 +63,7 @@ const studentLogoutButton = document.getElementById("student-logout-button");
 
 const studentForm = document.getElementById("student-form");
 const studentList = document.getElementById("student-list");
+const admissionInput = document.getElementById("admission");
 
 const depositForm = document.getElementById("deposit-form");
 const purchaseForm = document.getElementById("purchase-form");
@@ -91,6 +92,7 @@ let balances = {};
 let transactions = [];
 
 let registrationInProgress = false;
+let currentStudentUid = null;
 
 
 // ============================================
@@ -146,77 +148,51 @@ function escapeHTML(value) {
 
 
 function showLogin() {
-
     loginScreen.hidden = false;
     registerScreen.hidden = true;
-
-    if (linkScreen) {
-        linkScreen.hidden = true;
-    }
-
+    linkScreen.hidden = true;
     adminApp.hidden = true;
     studentApp.hidden = true;
 }
 
 
 function showRegister() {
-
     loginScreen.hidden = true;
     registerScreen.hidden = false;
-
-    if (linkScreen) {
-        linkScreen.hidden = true;
-    }
-
+    linkScreen.hidden = true;
     adminApp.hidden = true;
     studentApp.hidden = true;
 }
 
 
 function showLink() {
-
     loginScreen.hidden = true;
     registerScreen.hidden = true;
-
-    if (linkScreen) {
-        linkScreen.hidden = false;
-    }
-
+    linkScreen.hidden = false;
     adminApp.hidden = true;
     studentApp.hidden = true;
 }
 
 
 function showAdmin() {
-
     loginScreen.hidden = true;
     registerScreen.hidden = true;
-
-    if (linkScreen) {
-        linkScreen.hidden = true;
-    }
-
+    linkScreen.hidden = true;
     adminApp.hidden = false;
     studentApp.hidden = true;
 }
 
 
 function showStudent() {
-
     loginScreen.hidden = true;
     registerScreen.hidden = true;
-
-    if (linkScreen) {
-        linkScreen.hidden = true;
-    }
-
+    linkScreen.hidden = true;
     adminApp.hidden = true;
     studentApp.hidden = false;
 }
 
 
 function getStudentByAdmission(admission) {
-
     return students.find(student => {
         return student.admission === admission;
     });
@@ -224,7 +200,6 @@ function getStudentByAdmission(admission) {
 
 
 function getBalanceByUid(uid) {
-
     if (!uid) {
         return {
             balance: 0,
@@ -242,7 +217,6 @@ function getBalanceByUid(uid) {
 function getDateValue(transaction) {
 
     if (transaction.date) {
-
         const date = new Date(transaction.date);
 
         if (!Number.isNaN(date.getTime())) {
@@ -259,7 +233,6 @@ function getDateValue(transaction) {
 
 
 function formatDate(transaction) {
-
     const date = getDateValue(transaction);
 
     if (date.getTime() === 0) {
@@ -275,8 +248,6 @@ function getTransactionProduct(transaction) {
     if (transaction.product) {
         return String(transaction.product).trim();
     }
-
-    // Support older purchase records.
 
     const type = String(transaction.type || "");
 
@@ -317,7 +288,39 @@ function isCreditPurchase(transaction) {
 
 
 // ============================================
-// 5. LOGIN AND REGISTRATION SCREEN BUTTONS
+// 5. ADMISSION NUMBER GENERATION
+// ============================================
+
+function generateAdmissionNumber() {
+
+    let highestNumber = 0;
+
+    students.forEach(student => {
+
+        const match = String(student.admission || "").match(/^ASYV(\d+)$/);
+
+        if (match) {
+            highestNumber = Math.max(
+                highestNumber,
+                Number(match[1])
+            );
+        }
+    });
+
+    return "ASYV" + String(highestNumber + 1).padStart(3, "0");
+}
+
+
+function updateAdmissionPreview() {
+
+    if (!admissionInput) return;
+
+    admissionInput.value = generateAdmissionNumber();
+}
+
+
+// ============================================
+// 6. LOGIN AND REGISTRATION SCREEN BUTTONS
 // ============================================
 
 if (showRegisterButton) {
@@ -341,7 +344,7 @@ if (backToLoginButton) {
 
 
 // ============================================
-// 6. STUDENT SELF-REGISTRATION
+// 7. STUDENT SELF-REGISTRATION
 // ============================================
 
 if (registerForm) {
@@ -356,22 +359,18 @@ if (registerForm) {
         const confirmPassword = getValue("register-confirm-password");
 
         if (!admission || !email || !password || !confirmPassword) {
-
             showRegisterMessage("Please complete all fields.");
             return;
         }
 
         if (password.length < 6) {
-
             showRegisterMessage(
                 "Your password must contain at least 6 characters."
             );
-
             return;
         }
 
         if (password !== confirmPassword) {
-
             showRegisterMessage("The passwords do not match.");
             return;
         }
@@ -390,9 +389,9 @@ if (registerForm) {
 
             await sendEmailVerification(userCredential.user);
 
-            registrationInProgress = false;
-
             await signOut(auth);
+
+            registrationInProgress = false;
 
             registerForm.reset();
 
@@ -435,7 +434,7 @@ if (registerForm) {
 
 
 // ============================================
-// 7. LOGIN AND LOGOUT
+// 8. LOGIN AND LOGOUT
 // ============================================
 
 if (loginForm) {
@@ -448,7 +447,6 @@ if (loginForm) {
         const password = getValue("login-password");
 
         if (!email || !password) {
-
             showError("Please enter your email and password.");
             return;
         }
@@ -480,6 +478,7 @@ async function logoutUser() {
         students = [];
         balances = {};
         transactions = [];
+        currentStudentUid = null;
 
         showLogin();
 
@@ -508,21 +507,67 @@ if (linkLogoutButton) {
 
 
 // ============================================
-// 8. CHECK SIGNED-IN USER
+// 9. LOAD ADMINISTRATOR DATA
+// ============================================
+
+async function loadAdminData() {
+
+    const studentSnapshot = await getDocs(
+        collection(db, "students")
+    );
+
+    students = studentSnapshot.docs.map(document => ({
+        ...document.data(),
+        documentId: document.id
+    }));
+
+
+    const balanceSnapshot = await getDocs(
+        collection(db, "balances")
+    );
+
+    balances = {};
+
+    balanceSnapshot.forEach(document => {
+        balances[document.id] = document.data();
+    });
+
+
+    const transactionSnapshot = await getDocs(
+        collection(db, "transactions")
+    );
+
+    transactions = transactionSnapshot.docs.map(document => ({
+        ...document.data(),
+        id: document.id
+    }));
+
+
+    transactions.sort((a, b) => {
+        return getDateValue(b) - getDateValue(a);
+    });
+
+
+    updateAdmissionPreview();
+}
+
+
+// ============================================
+// 10. CHECK SIGNED-IN USER
 // ============================================
 
 onAuthStateChanged(auth, async function(user) {
 
     if (!user) {
-
+        currentStudentUid = null;
         showLogin();
         return;
     }
 
 
-    // ADMINISTRATOR
-
     if (user.uid === ADMIN_UID) {
+
+        currentStudentUid = null;
 
         showAdmin();
 
@@ -545,14 +590,10 @@ onAuthStateChanged(auth, async function(user) {
     }
 
 
-    // ACCOUNT CREATION IN PROGRESS
-
     if (registrationInProgress) {
         return;
     }
 
-
-    // STUDENT EMAIL VERIFICATION
 
     if (!user.emailVerified) {
 
@@ -567,8 +608,6 @@ onAuthStateChanged(auth, async function(user) {
         return;
     }
 
-
-    // FIND LINKED STUDENT
 
     try {
 
@@ -590,10 +629,13 @@ onAuthStateChanged(auth, async function(user) {
             return;
         }
 
+
         const student = {
             ...studentSnapshot.docs[0].data(),
             documentId: studentSnapshot.docs[0].id
         };
+
+        currentStudentUid = user.uid;
 
         showStudent();
 
@@ -611,7 +653,7 @@ onAuthStateChanged(auth, async function(user) {
 
 
 // ============================================
-// 9. LINK VERIFIED STUDENT ACCOUNT
+// 11. LINK VERIFIED STUDENT ACCOUNT
 // ============================================
 
 if (linkForm) {
@@ -624,19 +666,16 @@ if (linkForm) {
         const admission = getValue("link-admission");
 
         if (!user) {
-
             showLinkMessage("Please log in first.");
             return;
         }
 
         if (!user.emailVerified) {
-
             showLinkMessage("Please verify your email first.");
             return;
         }
 
         if (!admission) {
-
             showLinkMessage("Enter your admission number.");
             return;
         }
@@ -706,6 +745,7 @@ if (linkForm) {
                 return;
             }
 
+
             const batch = writeBatch(db);
 
             batch.update(studentReference, {
@@ -734,17 +774,19 @@ if (linkForm) {
 
             showLinkMessage("Account linked successfully.");
 
-            alert("Your student account is now linked successfully.");
-
             const updatedStudent = {
                 ...student,
                 admission: admission,
                 authUid: user.uid
             };
 
+            currentStudentUid = user.uid;
+
             showStudent();
 
             await loadStudentPortal(user.uid, updatedStudent);
+
+            alert("Your student account is now linked successfully.");
 
         } catch (error) {
 
@@ -759,84 +801,7 @@ if (linkForm) {
 
 
 // ============================================
-// 10. LOAD ADMINISTRATOR DATA
-// ============================================
-
-async function loadAdminData() {
-
-    // STUDENTS
-
-    const studentSnapshot = await getDocs(
-        collection(db, "students")
-    );
-
-    students = studentSnapshot.docs.map(document => ({
-        ...document.data(),
-        documentId: document.id
-    }));
-
-
-    // BALANCES
-
-    const balanceSnapshot = await getDocs(
-        collection(db, "balances")
-    );
-
-    balances = {};
-
-    balanceSnapshot.forEach(document => {
-
-        balances[document.id] = document.data();
-    });
-
-
-    // TRANSACTIONS
-
-    const transactionSnapshot = await getDocs(
-        collection(db, "transactions")
-    );
-
-    transactions = transactionSnapshot.docs.map(document => ({
-        ...document.data(),
-        id: document.id
-    }));
-
-
-    // NEWEST FIRST
-
-    transactions.sort((a, b) => {
-        return getDateValue(b) - getDateValue(a);
-    });
-}
-
-
-// ============================================
-// 11. GENERATE ADMISSION NUMBER
-// ============================================
-
-function generateAdmissionNumber() {
-
-    let highestNumber = 0;
-
-    students.forEach(student => {
-
-        const match = String(student.admission || "").match(/^ASYV(\d+)$/);
-
-        if (match) {
-
-            highestNumber = Math.max(
-                highestNumber,
-                Number(match[1])
-            );
-        }
-    });
-
-    return "ASYV" + String(highestNumber + 1).padStart(3, "0");
-}
-
-
-// ============================================
-// 12. FIND DUPLICATE INVITATION EMAIL
+// 12. ADMINISTRATOR STUDENT REGISTRATION
 // ============================================
 
 async function findInvitationByEmail(email) {
@@ -851,10 +816,6 @@ async function findInvitationByEmail(email) {
     return !snapshot.empty;
 }
 
-
-// ============================================
-// 13. ADMINISTRATOR STUDENT REGISTRATION
-// ============================================
 
 if (studentForm) {
 
@@ -887,6 +848,7 @@ if (studentForm) {
 
             const batch = writeBatch(db);
 
+
             // PUBLIC STUDENT PROFILE
 
             batch.set(
@@ -901,6 +863,7 @@ if (studentForm) {
                 }
             );
 
+
             // PRIVATE EMAIL INVITATION
 
             batch.set(
@@ -914,6 +877,7 @@ if (studentForm) {
                     createdAt: serverTimestamp()
                 }
             );
+
 
             await batch.commit();
 
@@ -941,7 +905,7 @@ if (studentForm) {
 
 
 // ============================================
-// 14. DISPLAY STUDENTS
+// 13. DISPLAY STUDENTS
 // ============================================
 
 function displayStudents() {
@@ -960,6 +924,7 @@ function displayStudents() {
 
         return;
     }
+
 
     students.forEach(student => {
 
@@ -990,7 +955,7 @@ function displayStudents() {
 
 
 // ============================================
-// 15. DELETE STUDENT
+// 14. DELETE STUDENT
 // ============================================
 
 if (studentList) {
@@ -1063,7 +1028,7 @@ if (studentList) {
 
 
 // ============================================
-// 16. RECORD FINANCIAL TRANSACTION
+// 15. RECORD FINANCIAL TRANSACTION
 // ============================================
 
 async function recordFinancialTransaction(
@@ -1093,6 +1058,7 @@ async function recordFinancialTransaction(
     const transactionReference = doc(
         collection(db, "transactions")
     );
+
 
     // UPDATE STUDENT BALANCE
 
@@ -1125,7 +1091,6 @@ async function recordFinancialTransaction(
     };
 
     if (product) {
-
         transactionData.product = product;
     }
 
@@ -1140,7 +1105,7 @@ async function recordFinancialTransaction(
 
 
 // ============================================
-// 17. DEPOSIT MONEY
+// 16. DEPOSIT MONEY
 // ============================================
 
 if (depositForm) {
@@ -1150,25 +1115,21 @@ if (depositForm) {
         event.preventDefault();
 
         const admission = getValue("deposit-student-id");
-
         const amount = Number(getValue("deposit-amount"));
 
         const student = getStudentByAdmission(admission);
 
         if (!student) {
-
             alert("Please enter a valid student admission number.");
             return;
         }
 
         if (!student.authUid) {
-
             alert("This student has not linked their account yet.");
             return;
         }
 
         if (!Number.isFinite(amount) || amount <= 0) {
-
             alert("Enter a valid deposit amount.");
             return;
         }
@@ -1203,7 +1164,7 @@ if (depositForm) {
 
 
 // ============================================
-// 18. MAKE NORMAL PURCHASE
+// 17. MAKE NORMAL PURCHASE
 // ============================================
 
 if (purchaseForm) {
@@ -1213,33 +1174,27 @@ if (purchaseForm) {
         event.preventDefault();
 
         const admission = getValue("purchase-student-id");
-
         const product = getValue("purchase-description");
-
         const amount = Number(getValue("purchase-amount"));
 
         const student = getStudentByAdmission(admission);
 
         if (!student) {
-
             alert("Please enter a valid student admission number.");
             return;
         }
 
         if (!student.authUid) {
-
             alert("This student has not linked their account yet.");
             return;
         }
 
         if (!product) {
-
             alert("Enter the product purchased.");
             return;
         }
 
         if (!Number.isFinite(amount) || amount <= 0) {
-
             alert("Enter a valid purchase amount.");
             return;
         }
@@ -1247,7 +1202,6 @@ if (purchaseForm) {
         const current = getBalanceByUid(student.authUid);
 
         if (Number(current.balance || 0) < amount) {
-
             alert("Insufficient wallet balance.");
             return;
         }
@@ -1281,7 +1235,7 @@ if (purchaseForm) {
 
 
 // ============================================
-// 19. RECORD CREDIT PURCHASE
+// 18. RECORD CREDIT PURCHASE
 // ============================================
 
 if (creditForm) {
@@ -1291,33 +1245,27 @@ if (creditForm) {
         event.preventDefault();
 
         const admission = getValue("credit-student-id");
-
         const product = getValue("credit-description");
-
         const amount = Number(getValue("credit-amount"));
 
         const student = getStudentByAdmission(admission);
 
         if (!student) {
-
             alert("Please enter a valid student admission number.");
             return;
         }
 
         if (!student.authUid) {
-
             alert("This student has not linked their account yet.");
             return;
         }
 
         if (!product) {
-
             alert("Enter the product purchased.");
             return;
         }
 
         if (!Number.isFinite(amount) || amount <= 0) {
-
             alert("Enter a valid credit amount.");
             return;
         }
@@ -1353,7 +1301,7 @@ if (creditForm) {
 
 
 // ============================================
-// 20. RECORD CREDIT REPAYMENT
+// 19. RECORD CREDIT REPAYMENT
 // ============================================
 
 if (repaymentForm) {
@@ -1363,25 +1311,21 @@ if (repaymentForm) {
         event.preventDefault();
 
         const admission = getValue("repayment-student-id");
-
         const amount = Number(getValue("repayment-amount"));
 
         const student = getStudentByAdmission(admission);
 
         if (!student) {
-
             alert("Please enter a valid student admission number.");
             return;
         }
 
         if (!student.authUid) {
-
             alert("This student has not linked their account yet.");
             return;
         }
 
         if (!Number.isFinite(amount) || amount <= 0) {
-
             alert("Enter a valid repayment amount.");
             return;
         }
@@ -1425,7 +1369,7 @@ if (repaymentForm) {
 
 
 // ============================================
-// 21. DISPLAY TRANSACTION HISTORY
+// 20. DISPLAY TRANSACTION HISTORY
 // ============================================
 
 function displayTransactions() {
@@ -1444,6 +1388,7 @@ function displayTransactions() {
 
         return;
     }
+
 
     transactions.forEach(transaction => {
 
@@ -1475,7 +1420,7 @@ function displayTransactions() {
 
 
 // ============================================
-// 22. SELECT ALL TRANSACTIONS
+// 21. SELECT ALL TRANSACTIONS
 // ============================================
 
 if (selectAllTransactions) {
@@ -1487,7 +1432,6 @@ if (selectAllTransactions) {
         );
 
         checkboxes.forEach(checkbox => {
-
             checkbox.checked = selectAllTransactions.checked;
         });
     });
@@ -1495,7 +1439,7 @@ if (selectAllTransactions) {
 
 
 // ============================================
-// 23. DELETE SELECTED TRANSACTIONS
+// 22. DELETE SELECTED TRANSACTIONS
 // ============================================
 
 if (deleteSelectedTransactions) {
@@ -1511,8 +1455,12 @@ if (deleteSelectedTransactions) {
         });
 
         if (selectedIds.length === 0) {
-
             alert("Select at least one transaction to delete.");
+            return;
+        }
+
+        if (selectedIds.length > 500) {
+            alert("Please select no more than 500 transactions at a time.");
             return;
         }
 
@@ -1557,7 +1505,7 @@ if (deleteSelectedTransactions) {
 
 
 // ============================================
-// 24. DISPLAY OUTSTANDING CREDIT
+// 23. DISPLAY OUTSTANDING CREDIT
 // ============================================
 
 function displayCredits() {
@@ -1575,6 +1523,7 @@ function displayCredits() {
         return Number(financialRecord.creditBalance || 0) > 0;
     });
 
+
     if (studentsWithCredit.length === 0) {
 
         creditList.innerHTML = `
@@ -1586,6 +1535,7 @@ function displayCredits() {
         return;
     }
 
+
     studentsWithCredit.forEach(student => {
 
         const financialRecord = getBalanceByUid(student.authUid);
@@ -1594,9 +1544,7 @@ function displayCredits() {
 
         row.innerHTML = `
             <td>${escapeHTML(student.admission)}</td>
-
             <td>${escapeHTML(student.name)}</td>
-
             <td>${formatMoney(financialRecord.creditBalance)}</td>
         `;
 
@@ -1606,7 +1554,7 @@ function displayCredits() {
 
 
 // ============================================
-// 25. UPDATE DASHBOARD AND FINANCIAL REPORTS
+// 24. DASHBOARD AND FINANCIAL REPORTS
 // ============================================
 
 function updateReports() {
@@ -1615,6 +1563,7 @@ function updateReports() {
     let totalSales = 0;
     let totalCredit = 0;
     let totalRepayments = 0;
+
 
     transactions.forEach(transaction => {
 
@@ -1626,7 +1575,8 @@ function updateReports() {
             totalDeposits += amount;
         }
 
-        if (isPurchaseTransaction(transaction) && !isCreditPurchase(transaction)) {
+        // Total sales includes wallet and credit purchases.
+        if (isPurchaseTransaction(transaction)) {
             totalSales += amount;
         }
 
@@ -1640,31 +1590,6 @@ function updateReports() {
     });
 
 
-    const totalStudentsElement = document.getElementById("total-students");
-
-    const dashboardDeposits = document.getElementById("dashboard-deposits");
-
-    const dashboardSales = document.getElementById("dashboard-sales");
-
-    const dashboardCredit = document.getElementById("dashboard-credit");
-
-
-    if (totalStudentsElement) {
-
-        totalStudentsElement.textContent = students.length;
-    }
-
-    if (dashboardDeposits) {
-
-        dashboardDeposits.textContent = formatMoney(totalDeposits);
-    }
-
-    if (dashboardSales) {
-
-        dashboardSales.textContent = formatMoney(totalSales);
-    }
-
-
     const outstandingCredit = students.reduce((total, student) => {
 
         const financialRecord = getBalanceByUid(student.authUid);
@@ -1674,51 +1599,58 @@ function updateReports() {
     }, 0);
 
 
-    if (dashboardCredit) {
-
-        dashboardCredit.textContent = formatMoney(outstandingCredit);
-    }
-
+    const totalStudentsElement = document.getElementById("total-students");
+    const dashboardDeposits = document.getElementById("dashboard-deposits");
+    const dashboardSales = document.getElementById("dashboard-sales");
+    const dashboardCredit = document.getElementById("dashboard-credit");
 
     const reportDeposits = document.getElementById("report-deposits");
-
     const reportSales = document.getElementById("report-sales");
-
     const reportCredit = document.getElementById("report-credit");
-
     const reportRepayments = document.getElementById("report-repayments");
 
 
-    if (reportDeposits) {
+    if (totalStudentsElement) {
+        totalStudentsElement.textContent = students.length;
+    }
 
+    if (dashboardDeposits) {
+        dashboardDeposits.textContent = formatMoney(totalDeposits);
+    }
+
+    if (dashboardSales) {
+        dashboardSales.textContent = formatMoney(totalSales);
+    }
+
+    if (dashboardCredit) {
+        dashboardCredit.textContent = formatMoney(outstandingCredit);
+    }
+
+    if (reportDeposits) {
         reportDeposits.textContent = formatMoney(totalDeposits);
     }
 
     if (reportSales) {
-
         reportSales.textContent = formatMoney(totalSales);
     }
 
     if (reportCredit) {
-
         reportCredit.textContent = formatMoney(outstandingCredit);
     }
 
     if (reportRepayments) {
-
         reportRepayments.textContent = formatMoney(totalRepayments);
     }
 }
 
 
 // ============================================
-// 26. STATISTICS DATE FILTER
+// 25. STATISTICS DATE FILTER
 // ============================================
 
 function getStatisticsStartDate(period) {
 
     const now = new Date();
-
     const start = new Date(now);
 
     if (period === "daily") {
@@ -1755,7 +1687,7 @@ function getStatisticsStartDate(period) {
 
 
 // ============================================
-// 27. CALCULATE STATISTICS
+// 26. CALCULATE STATISTICS
 // ============================================
 
 function updateStatistics() {
@@ -1817,7 +1749,6 @@ function updateStatistics() {
     );
 
     if (totalBuyersElement) {
-
         totalBuyersElement.textContent = uniqueBuyers.size;
     }
 
@@ -1829,7 +1760,6 @@ function updateStatistics() {
     );
 
     if (totalPurchasesElement) {
-
         totalPurchasesElement.textContent = purchaseTransactions.length;
     }
 
@@ -1916,11 +1846,8 @@ function updateStatistics() {
 
                 row.innerHTML = `
                     <td>${index + 1}</td>
-
                     <td>${escapeHTML(product.name)}</td>
-
                     <td>${product.count}</td>
-
                     <td>${formatMoney(product.total)}</td>
                 `;
 
@@ -1982,13 +1909,9 @@ function updateStatistics() {
 
                 row.innerHTML = `
                     <td>${index + 1}</td>
-
                     <td>${escapeHTML(buyer.admission)}</td>
-
                     <td>${escapeHTML(buyer.name)}</td>
-
                     <td>${buyer.count}</td>
-
                     <td>${formatMoney(buyer.total)}</td>
                 `;
 
@@ -2000,20 +1923,19 @@ function updateStatistics() {
 
 
 // ============================================
-// 28. STATISTICS FILTER EVENT
+// 27. STATISTICS FILTER EVENT
 // ============================================
 
 if (statisticsPeriod) {
 
     statisticsPeriod.addEventListener("change", function() {
-
         updateStatistics();
     });
 }
 
 
 // ============================================
-// 29. REFRESH ALL ADMIN DISPLAYS
+// 28. REFRESH ALL ADMIN DISPLAYS
 // ============================================
 
 function refreshDisplays() {
@@ -2027,11 +1949,13 @@ function refreshDisplays() {
     updateReports();
 
     updateStatistics();
+
+    updateAdmissionPreview();
 }
 
 
 // ============================================
-// 30. STUDENT PORTAL
+// 29. STUDENT PORTAL
 // ============================================
 
 async function loadStudentPortal(uid, student) {
@@ -2058,17 +1982,14 @@ async function loadStudentPortal(uid, student) {
 
 
     if (nameDisplay) {
-
         nameDisplay.textContent = student.name || "";
     }
 
     if (admissionDisplay) {
-
         admissionDisplay.textContent = student.admission || "";
     }
 
     if (classDisplay) {
-
         classDisplay.textContent = student.studentClass || "";
     }
 
@@ -2080,7 +2001,6 @@ async function loadStudentPortal(uid, student) {
     );
 
     let balance = 0;
-
     let creditBalance = 0;
 
     if (balanceDocument.exists()) {
@@ -2094,12 +2014,10 @@ async function loadStudentPortal(uid, student) {
 
 
     if (balanceDisplay) {
-
         balanceDisplay.textContent = formatMoney(balance);
     }
 
     if (creditBalanceDisplay) {
-
         creditBalanceDisplay.textContent = formatMoney(creditBalance);
     }
 
@@ -2116,7 +2034,7 @@ async function loadStudentPortal(uid, student) {
 
 
 // ============================================
-// 31. STUDENT PURCHASE HISTORY - READ ONLY
+// 30. STUDENT PURCHASE HISTORY - READ ONLY
 // ============================================
 
 async function displayStudentPurchaseHistory(admission) {
@@ -2146,15 +2064,11 @@ async function displayStudentPurchaseHistory(admission) {
 
         const snapshot = await getDocs(studentTransactionsQuery);
 
-        const studentTransactions = snapshot.docs.map(document => {
-            return {
-                ...document.data(),
-                id: document.id
-            };
-        });
+        const studentTransactions = snapshot.docs.map(document => ({
+            ...document.data(),
+            id: document.id
+        }));
 
-
-        // ONLY PURCHASES AND CREDIT PURCHASES
 
         const purchases = studentTransactions
             .filter(isPurchaseTransaction)
@@ -2164,6 +2078,7 @@ async function displayStudentPurchaseHistory(admission) {
         historyList.innerHTML = "";
 
         let totalSpent = 0;
+
 
         purchases.forEach(transaction => {
 
@@ -2179,11 +2094,8 @@ async function displayStudentPurchaseHistory(admission) {
 
             row.innerHTML = `
                 <td>${escapeHTML(getTransactionProduct(transaction))}</td>
-
                 <td>${purchaseType}</td>
-
                 <td>${formatMoney(amount)}</td>
-
                 <td>${escapeHTML(formatDate(transaction))}</td>
             `;
 
@@ -2202,7 +2114,6 @@ async function displayStudentPurchaseHistory(admission) {
 
 
         if (totalSpentElement) {
-
             totalSpentElement.textContent = formatMoney(totalSpent);
         }
 
@@ -2212,9 +2123,7 @@ async function displayStudentPurchaseHistory(admission) {
 
         historyList.innerHTML = `
             <tr>
-                <td colspan="4">
-                    Unable to load purchase history.
-                </td>
+                <td colspan="4">Unable to load purchase history.</td>
             </tr>
         `;
     }
@@ -2222,7 +2131,7 @@ async function displayStudentPurchaseHistory(admission) {
 
 
 // ============================================
-// 32. STUDENT DIRECTORY
+// 31. STUDENT DIRECTORY
 // ============================================
 
 async function displayStudentDirectory() {
@@ -2271,9 +2180,7 @@ async function displayStudentDirectory() {
 
             row.innerHTML = `
                 <td>${escapeHTML(student.admission)}</td>
-
                 <td>${escapeHTML(student.name)}</td>
-
                 <td>${escapeHTML(student.studentClass)}</td>
             `;
 
@@ -2294,10 +2201,9 @@ async function displayStudentDirectory() {
 
 
 // ============================================
-// 33. APPLICATION READY
+// 32. APPLICATION READY
 // ============================================
 
 console.log(
     "Smart Canteen Manager Firebase application loaded successfully."
 );
-```
