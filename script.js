@@ -2232,3 +2232,37 @@ async function displayStudentDirectory() {
 console.log(
     "Smart Canteen Manager Firebase application loaded successfully."
 );
+
+const feedbackForm = document.getElementById("feedback-form");
+
+feedbackForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const name = document.getElementById("feedback-name").value;
+    const email = document.getElementById("feedback-email").value;
+    const message = document.getElementById("feedback-message").value;
+
+    const feedback = {
+        name: name,
+        email: email,
+        message: message,
+        date: new Date().toLocaleString()
+    };
+
+    let feedbacks = JSON.parse(
+        localStorage.getItem("feedbacks")
+    ) || [];
+
+    feedbacks.push(feedback);
+
+    localStorage.setItem(
+        "feedbacks",
+        JSON.stringify(feedbacks)
+    );
+
+    document.getElementById("feedback-status").textContent =
+        "Thank you! Your feedback has been saved.";
+
+    feedbackForm.reset();
+});
+
