@@ -35,8 +35,10 @@ body {
     justify-content: center;
     align-items: center;
     padding: 20px;
-    background: linear-gradient(135deg, #123b5d, #25658a);
-     background-image:url("images/login-background.jpg");
+    background: linear-gradient(135deg, #123b5d, #25658a
+    ),
+        url("images/login-background.jpg");
+
 }
 
 .login-container {
