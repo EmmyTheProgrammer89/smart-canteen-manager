@@ -74,6 +74,7 @@
             <a href="#transactions-section">Transactions</a>
             <a href="#reports-section">Reports</a>
             <a href="#statistics-section">Statistics</a>
+            <a href="#feedback-management-section">Feedback</a>
         </aside>
         <button type="button" id="admin-logout-button">Logout</button>
     </div>
@@ -265,10 +266,33 @@
                 </table>
             </div>
         </section>
+
+        <!-- 12. FEEDBACK MANAGEMENT (SELLER) -->
+        <section id="feedback-management-section">
+            <h2>Feedback Management</h2>
+            <p>Read feedback submitted by students and review their suggestions.</p>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Email</th>
+                            <th>Category</th>
+                            <th>Message</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="feedback-list"></tbody>
+                </table>
+            </div>
+        </section>
     </div>
 </div>
 
-<!-- 12. STUDENT PORTAL -->
+<!-- 13. STUDENT PORTAL -->
 <div id="student-app" class="student-app" hidden>
     <header class="student-header">
         <div>
@@ -349,6 +373,13 @@
             <h3>Send Us Your Feedback</h3>
 
             <form id="feedback-form">
+                <label for="feedback-category">Feedback Category</label>
+                <select id="feedback-category" required>
+                    <option value="">Select a category</option>
+                    <option value="Suggestion">Suggestion</option>
+                    <option value="Complaint">Complaint</option>
+                    <option value="Appreciation">Appreciation</option>
+                </select>
                 <input
                     type="text"
                     id="feedback-name"
@@ -388,7 +419,7 @@
 
 
 
-<!-- 13. JAVASCRIPT MODULE -->
+<!-- 14. JAVASCRIPT MODULE -->
 <script type="module" src="script.js"></script>
 
 </body>
