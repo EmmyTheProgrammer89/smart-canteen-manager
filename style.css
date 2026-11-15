@@ -614,3 +614,20 @@ table input[type="checkbox"] {
     margin-top: 25px;
     padding-top: 15px;
 }
+/* Keep footer at the bottom */
+body {
+    min-height: 100vh;
+}
+
+.main-content {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.footer {
+    margin-top: auto;
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    box-sizing: border-box;
+}
