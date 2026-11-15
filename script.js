@@ -1102,15 +1102,21 @@ async function recordFinancialTransaction(
 }
 
 
+
 // ============================================
 // 16. DEPOSIT MONEY
 // ============================================
+
+let depositProcessing = false;
 
 if (depositForm) {
 
     depositForm.addEventListener("submit", async function(event) {
 
         event.preventDefault();
+
+        // Prevent duplicate submissions
+        if (depositProcessing) return;
 
         const admission = getValue("deposit-student-id");
         const amount = Number(getValue("deposit-amount"));
@@ -1130,6 +1136,17 @@ if (depositForm) {
         if (!Number.isFinite(amount) || amount <= 0) {
             alert("Enter a valid deposit amount.");
             return;
+        }
+
+        // Lock the form while processing
+        depositProcessing = true;
+
+        const depositButton = depositForm.querySelector(
+            'button[type="submit"], input[type="submit"]'
+        );
+
+        if (depositButton) {
+            depositButton.disabled = true;
         }
 
         try {
@@ -1156,9 +1173,19 @@ if (depositForm) {
             console.error("Deposit error:", error);
 
             alert("Could not record the deposit.");
+
+        } finally {
+
+            // Allow the next deposit
+            depositProcessing = false;
+
+            if (depositButton) {
+                depositButton.disabled = false;
+            }
         }
     });
 }
+
 
 
 // ============================================
