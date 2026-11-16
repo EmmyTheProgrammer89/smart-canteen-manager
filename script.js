@@ -24,6 +24,8 @@ import {
     query,
     where,
     writeBatch,
+    runTransaction,
+    updateDoc,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
 
@@ -67,6 +69,10 @@ const admissionInput = document.getElementById("admission");
 
 const depositForm = document.getElementById("deposit-form");
 const purchaseForm = document.getElementById("purchase-form");
+const orderItemsContainer = document.getElementById("order-items-container");
+const addOrderItemButton = document.getElementById("add-order-item-button");
+const orderTotalElement = document.getElementById("order-total");
+const pendingOrdersList = document.getElementById("pending-orders-list");
 const creditForm = document.getElementById("credit-form");
 const repaymentForm = document.getElementById("repayment-form");
 
@@ -90,6 +96,8 @@ const statisticsPeriod = document.getElementById("statistics-period");
 let students = [];
 let balances = {};
 let transactions = [];
+let orders = [];
+let ordersLoadError = false;
 let feedbacks = [];
 
 let registrationInProgress = false;
@@ -479,6 +487,7 @@ async function logoutUser() {
         students = [];
         balances = {};
         transactions = [];
+        orders = [];
         currentStudentUid = null;
 
         showLogin();
@@ -547,6 +556,29 @@ async function loadAdminData() {
     transactions.sort((a, b) => {
         return getDateValue(b) - getDateValue(a);
     });
+
+
+    // Load customer orders for the administrator order queue.
+    try {
+        const orderSnapshot = await getDocs(
+            collection(db, "orders")
+        );
+
+        orders = orderSnapshot.docs.map(document => ({
+            ...document.data(),
+            id: document.id
+        }));
+
+        orders.sort((a, b) => getDateValue(b) - getDateValue(a));
+        ordersLoadError = false;
+
+    } catch (orderError) {
+        // Keep the existing dashboard available if the new collection's
+        // Firestore rules have not been configured yet.
+        console.error("Could not load orders. Check Firestore rules:", orderError);
+        orders = [];
+        ordersLoadError = true;
+    }
 
 
     // Load feedback submitted by students
@@ -1178,8 +1210,105 @@ if (depositForm) {
 
 
 // ============================================
-// 17. MAKE NORMAL PURCHASE
+// 17. MULTI-ITEM CUSTOMER ORDERS
 // ============================================
+
+function addOrderItemRow() {
+
+    if (!orderItemsContainer) return;
+
+    const row = document.createElement("div");
+    row.className = "order-item-row";
+
+    row.innerHTML = `
+        <div>
+            <label>Product name</label>
+            <input type="text" class="order-product" placeholder="e.g. Bread" required>
+        </div>
+        <div>
+            <label>Unit price (RWF)</label>
+            <input type="number" class="order-unit-price" min="1" step="1" placeholder="e.g. 500" required>
+        </div>
+        <div>
+            <label>Quantity</label>
+            <input type="number" class="order-quantity" min="1" step="1" value="1" required>
+        </div>
+        <button type="button" class="remove-order-item">Remove</button>
+    `;
+
+    orderItemsContainer.appendChild(row);
+    updateOrderTotal();
+}
+
+
+function readOrderItems() {
+
+    if (!orderItemsContainer) return [];
+
+    const rows = Array.from(
+        orderItemsContainer.querySelectorAll(".order-item-row")
+    );
+
+    return rows.map(row => {
+
+        const product = row.querySelector(".order-product").value.trim();
+        const unitPrice = Number(row.querySelector(".order-unit-price").value);
+        const quantity = Number(row.querySelector(".order-quantity").value);
+
+        return {
+            product,
+            unitPrice,
+            quantity,
+            lineTotal: unitPrice * quantity
+        };
+    });
+}
+
+
+function updateOrderTotal() {
+
+    if (!orderTotalElement) return;
+
+    const items = readOrderItems();
+    const total = items.reduce((sum, item) => {
+        if (Number.isFinite(item.lineTotal) && item.lineTotal > 0) {
+            return sum + item.lineTotal;
+        }
+        return sum;
+    }, 0);
+
+    orderTotalElement.textContent = formatMoney(total);
+}
+
+
+if (addOrderItemButton) {
+    addOrderItemButton.addEventListener("click", addOrderItemRow);
+}
+
+
+if (orderItemsContainer) {
+
+    orderItemsContainer.addEventListener("input", updateOrderTotal);
+
+    orderItemsContainer.addEventListener("click", function(event) {
+
+        const removeButton = event.target.closest(".remove-order-item");
+        if (!removeButton) return;
+
+        const rows = orderItemsContainer.querySelectorAll(".order-item-row");
+
+        if (rows.length <= 1) {
+            alert("An order must contain at least one product.");
+            return;
+        }
+
+        removeButton.closest(".order-item-row").remove();
+        updateOrderTotal();
+    });
+
+    addOrderItemRow();
+}
+
 
 if (purchaseForm) {
 
@@ -1188,10 +1317,8 @@ if (purchaseForm) {
         event.preventDefault();
 
         const admission = getValue("purchase-student-id");
-        const product = getValue("purchase-description");
-        const amount = Number(getValue("purchase-amount"));
-
         const student = getStudentByAdmission(admission);
+        const items = readOrderItems();
 
         if (!student) {
             alert("Please enter a valid student admission number.");
@@ -1203,46 +1330,226 @@ if (purchaseForm) {
             return;
         }
 
-        if (!product) {
-            alert("Enter the product purchased.");
+        if (items.length === 0) {
+            alert("Add at least one product to the order.");
             return;
         }
 
-        if (!Number.isFinite(amount) || amount <= 0) {
-            alert("Enter a valid purchase amount.");
+        const invalidItem = items.find(item => (
+            !item.product ||
+            !Number.isSafeInteger(item.unitPrice) || item.unitPrice <= 0 ||
+            !Number.isSafeInteger(item.quantity) || item.quantity <= 0 ||
+            !Number.isSafeInteger(item.lineTotal) || item.lineTotal <= 0
+        ));
+
+        if (invalidItem) {
+            alert("Check every product name, unit price and quantity. Prices and quantities must be positive whole numbers.");
             return;
         }
 
-        const current = getBalanceByUid(student.authUid);
+        const total = items.reduce((sum, item) => sum + item.lineTotal, 0);
 
-        if (Number(current.balance || 0) < amount) {
-            alert("Insufficient wallet balance.");
+        if (!Number.isSafeInteger(total) || total <= 0) {
+            alert("The order total is invalid.");
             return;
         }
+
+        if (!confirm(
+            "Submit this order for " + formatMoney(total) +
+            "? The amount will be deducted from the student's wallet."
+        )) {
+            return;
+        }
+
+        const balanceReference = doc(db, "balances", student.authUid);
+        const orderReference = doc(collection(db, "orders"));
+        const transactionReferences = items.map(() => doc(collection(db, "transactions")));
 
         try {
 
-            const newBalance =
-                Number(current.balance || 0) - amount;
+            const submitButton = document.getElementById("submit-order-button");
+            if (submitButton) submitButton.disabled = true;
 
-            await recordFinancialTransaction(
-                student,
-                "Purchase",
-                amount,
-                newBalance,
-                Number(current.creditBalance || 0),
-                product
-            );
+            await runTransaction(db, async function(firebaseTransaction) {
+
+                const balanceSnapshot = await firebaseTransaction.get(balanceReference);
+
+                if (!balanceSnapshot.exists()) {
+                    throw new Error("BALANCE_NOT_FOUND");
+                }
+
+                const currentBalanceData = balanceSnapshot.data();
+                const currentBalance = Number(currentBalanceData.balance || 0);
+                const currentCreditBalance = Number(currentBalanceData.creditBalance || 0);
+
+                if (currentBalance < total) {
+                    throw new Error("INSUFFICIENT_BALANCE");
+                }
+
+                firebaseTransaction.update(balanceReference, {
+                    balance: currentBalance - total,
+                    creditBalance: currentCreditBalance,
+                    admission: student.admission
+                });
+
+                firebaseTransaction.set(orderReference, {
+                    admission: student.admission,
+                    studentName: student.name,
+                    studentUid: student.authUid,
+                    items: items.map(item => ({
+                        product: item.product,
+                        unitPrice: item.unitPrice,
+                        quantity: item.quantity,
+                        lineTotal: item.lineTotal
+                    })),
+                    total: total,
+                    status: "Pending",
+                    date: new Date().toISOString(),
+                    createdAt: serverTimestamp()
+                });
+
+                items.forEach((item, index) => {
+
+                    firebaseTransaction.set(transactionReferences[index], {
+                        admission: student.admission,
+                        studentName: student.name,
+                        type: "Purchase",
+                        product: item.product,
+                        quantity: item.quantity,
+                        amount: item.lineTotal,
+                        orderId: orderReference.id,
+                        date: new Date().toISOString(),
+                        createdAt: serverTimestamp()
+                    });
+                });
+            });
+
+            await loadAdminData();
+            refreshDisplays();
 
             purchaseForm.reset();
+            orderItemsContainer.innerHTML = "";
+            addOrderItemRow();
+            updateOrderTotal();
 
-            alert("Purchase recorded successfully.");
+            alert("Order submitted. It is now visible in Order Management.");
 
         } catch (error) {
 
-            console.error("Purchase error:", error);
+            console.error("Order submission error:", error);
 
-            alert("Could not record the purchase.");
+            if (error.message === "INSUFFICIENT_BALANCE") {
+                alert("Insufficient wallet balance. The order was not submitted.");
+            } else if (error.message === "BALANCE_NOT_FOUND") {
+                alert("This student's wallet could not be found. Check the linked student account.");
+            } else {
+                alert("Could not submit the order. Check your internet connection and Firestore security rules.");
+            }
+
+        } finally {
+
+            const submitButton = document.getElementById("submit-order-button");
+            if (submitButton) submitButton.disabled = false;
+        }
+    });
+}
+
+
+// ============================================
+// 17B. ADMINISTRATOR ORDER QUEUE
+// ============================================
+
+function displayOrders() {
+
+    if (!pendingOrdersList) return;
+
+    pendingOrdersList.innerHTML = "";
+
+    if (ordersLoadError) {
+        pendingOrdersList.innerHTML = `
+            <tr><td colspan="6">Orders are unavailable. The Firestore rules must allow the administrator to read the orders collection.</td></tr>
+        `;
+        return;
+    }
+
+    if (orders.length === 0) {
+        pendingOrdersList.innerHTML = `
+            <tr><td colspan="6">No customer orders yet.</td></tr>
+        `;
+        return;
+    }
+
+    orders.forEach(order => {
+
+        const row = document.createElement("tr");
+        const status = String(order.status || "Pending");
+        const statusClass = status.toLowerCase();
+        const itemSummary = (Array.isArray(order.items) ? order.items : [])
+            .map(item => `${escapeHTML(item.product)} × ${Number(item.quantity || 0)}`)
+            .join("<br>");
+
+        let action = "—";
+        if (status === "Pending") {
+            action = `<button type="button" class="order-action-button" data-order-id="${escapeHTML(order.id)}" data-next-status="Preparing">Start preparing</button>`;
+        } else if (status === "Preparing") {
+            action = `<button type="button" class="order-action-button" data-order-id="${escapeHTML(order.id)}" data-next-status="Completed">Mark handed over</button>`;
+        }
+
+        row.innerHTML = `
+            <td>${escapeHTML(formatDate(order))}</td>
+            <td>${escapeHTML(order.studentName || "")}<br><small>${escapeHTML(order.admission || "")}</small></td>
+            <td>${itemSummary || "No item details"}</td>
+            <td>${formatMoney(order.total)}</td>
+            <td><span class="order-status ${escapeHTML(statusClass)}">${escapeHTML(status)}</span></td>
+            <td>${action}</td>
+        `;
+
+        pendingOrdersList.appendChild(row);
+    });
+}
+
+
+if (pendingOrdersList) {
+
+    pendingOrdersList.addEventListener("click", async function(event) {
+
+        const button = event.target.closest("[data-order-id][data-next-status]");
+        if (!button) return;
+
+        const orderId = button.dataset.orderId;
+        const nextStatus = button.dataset.nextStatus;
+        const order = orders.find(item => item.id === orderId);
+
+        if (!order) return;
+
+        const confirmation = nextStatus === "Completed"
+            ? "Confirm that all products have been handed to the customer?"
+            : "Move this order to Preparing?";
+
+        if (!confirm(confirmation)) return;
+
+        button.disabled = true;
+
+        try {
+
+            const orderUpdate = {
+                status: nextStatus,
+                updatedAt: serverTimestamp()
+            };
+
+            if (nextStatus === "Completed") {
+                orderUpdate.completedAt = serverTimestamp();
+            }
+
+            await updateDoc(doc(db, "orders", orderId), orderUpdate);
+            await loadAdminData();
+            refreshDisplays();
+
+        } catch (error) {
+
+            console.error("Order status update error:", error);
+            alert("Could not update this order. Check Firestore security rules and try again.");
+            button.disabled = false;
         }
     });
 }
@@ -2005,6 +2312,8 @@ function refreshDisplays() {
     displayStudents();
 
     displayTransactions();
+
+    displayOrders();
 
     displayFeedback();
 
