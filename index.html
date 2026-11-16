@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -70,6 +71,7 @@
             <a href="#students-section">Students</a>
             <a href="#deposits-section">Deposits</a>
             <a href="#purchases-section">Purchases</a>
+            <a href="#pending-orders-section">Pending Orders</a>
             <a href="#credit-section">Credit</a>
             <a href="#transactions-section">Transactions</a>
             <a href="#reports-section">Reports</a>
@@ -157,18 +159,49 @@
             </div>
         </section>
 
-        <!-- 8. PURCHASES -->
+        <!-- 8. MULTI-ITEM PURCHASE CART -->
         <section id="purchases-section">
-            <h2>Record Student Purchase</h2>
-            <form id="purchase-form">
+            <h2>Create a Customer Order</h2>
+            <p>Add every product the customer wants before submitting the order.</p>
+            <form id="purchase-form" class="purchase-order-form">
                 <label for="purchase-student-id">Student Admission Number</label>
-                <input type="text" id="purchase-student-id" placeholder="Enter admission number" required>
-                <label for="purchase-description">Product Purchased</label>
-                <input type="text" id="purchase-description" placeholder="Example: Bread" required>
-                <label for="purchase-amount">Purchase Amount (RWF)</label>
-                <input type="number" id="purchase-amount" placeholder="Enter amount" min="1" required>
-                <button type="submit">Record Purchase</button>
+                <input type="text" id="purchase-student-id" placeholder="Enter student admission number" required>
+
+                <h3>Order items</h3>
+                <div class="order-item-heading" aria-hidden="true">
+                    <span>Product</span><span>Unit price (RWF)</span><span>Quantity</span><span>Action</span>
+                </div>
+                <div id="order-items-container"></div>
+                <button type="button" id="add-order-item-button" class="secondary-button">+ Add another product</button>
+
+                <div class="order-total-panel">
+                    <span>Order total</span>
+                    <strong id="order-total">0 RWF</strong>
+                </div>
+                <p class="order-help">Check the products, prices and quantities before submitting. The total will be deducted from the student's wallet when the order is submitted.</p>
+                <button type="submit" id="submit-order-button">Submit Order</button>
             </form>
+        </section>
+
+        <!-- 9. PENDING AND COMPLETED ORDERS -->
+        <section id="pending-orders-section">
+            <h2>Order Management</h2>
+            <p>Orders remain here until the administrator confirms that they have been handed to the customer.</p>
+            <div class="table-container">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Order date</th>
+                            <th>Student</th>
+                            <th>Products and quantities</th>
+                            <th>Total (RWF)</th>
+                            <th>Status</th>
+                            <th>Administrator action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pending-orders-list"></tbody>
+                </table>
+            </div>
         </section>
 
         <!-- 9. CREDIT MANAGEMENT -->
@@ -354,6 +387,7 @@
             </table>
         </div>
     </section>
+
 <footer class="footer" id="student-footer">
     <div class="footer-container">
 
@@ -415,9 +449,6 @@
     </div>
 </footer>
 </div>
-    
-
-
 
 <!-- 14. JAVASCRIPT MODULE -->
 <script type="module" src="script.js"></script>
