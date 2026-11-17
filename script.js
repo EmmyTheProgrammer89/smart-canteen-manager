@@ -1,287 +1,4 @@
-
-// ============================================
-// SMART CANTEEN MANAGER
-// FIREBASE VERSION
-// STUDENT SELF-REGISTRATION + ACCOUNT LINKINGD
-// STUDENT PURCHASE HISTORY + STATISTICS
-// ============================================
-
-import { auth, db } from "./firebase.js";
-
-import {
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    sendEmailVerification,
-    signOut
-} from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
-
-import {
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    query,
-    where,
-    writeBatch,
-    runTransaction,
-    updateDoc,
-    serverTimestamp
-} from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
-
-
-// ============================================
-// 1. CONFIGURATION
-// ============================================
-
-const ADMIN_UID = "mRLoouOWj4Ng4phNGB7e6QAaNY32";
-
-
-// ============================================
-// 2. HTML ELEMENTS
-// ============================================
-
-const loginScreen = document.getElementById("login-screen");
-const loginForm = document.getElementById("login-form");
-const loginMessage = document.getElementById("login-message");
-
-const registerScreen = document.getElementById("student-register-screen");
-const registerForm = document.getElementById("student-register-form");
-const registerMessage = document.getElementById("register-message");
-
-const linkScreen = document.getElementById("student-link-screen");
-const linkForm = document.getElementById("student-link-form");
-const linkMessage = document.getElementById("link-message");
-
-const showRegisterButton = document.getElementById("show-register-button");
-const backToLoginButton = document.getElementById("back-to-login");
-const linkLogoutButton = document.getElementById("link-logout-button");
-
-const adminApp = document.getElementById("admin-app");
-const studentApp = document.getElementById("student-app");
-
-const adminLogoutButton = document.getElementById("admin-logout-button");
-const studentLogoutButton = document.getElementById("student-logout-button");
-
-const studentForm = document.getElementById("student-form");
-const studentList = document.getElementById("student-list");
-const studentSearchInput = document.getElementById("student-search-input");
-const admissionInput = document.getElementById("admission");
-
-const depositForm = document.getElementById("deposit-form");
-const purchaseForm = document.getElementById("purchase-form");
-const orderItemsContainer = document.getElementById("order-items-container");
-const addOrderItemButton = document.getElementById("add-order-item-button");
-const orderTotalElement = document.getElementById("order-total");
-const pendingOrdersList = document.getElementById("pending-orders-list");
-const creditForm = document.getElementById("credit-form");
-const repaymentForm = document.getElementById("repayment-form");
-
-const transactionList = document.getElementById("transaction-list");
-
-const selectAllTransactions = document.getElementById(
-    "select-all-transactions"
-);
-
-const deleteSelectedTransactions = document.getElementById(
-    "delete-selected-transactions"
-);
-
-const statisticsPeriod = document.getElementById("statistics-period");
-
-
-// ============================================
-// 3. APPLICATION DATA
-// ============================================
-
-let students = [];
-let balances = {};
-let transactions = [];
-let orders = [];
-let ordersLoadError = false;
-let feedbacks = [];
-
-let registrationInProgress = false;
-let currentStudentUid = null;
-
-
-// ============================================
-// 4. GENERAL FUNCTIONS
-// ============================================
-
-function formatMoney(amount) {
-    return Number(amount || 0).toLocaleString("en-US") + " RWF";
-}
-
-
-function getValue(id) {
-    const element = document.getElementById(id);
-    return element ? element.value.trim() : "";
-}
-
-
-function showError(message) {
-    if (loginMessage) {
-        loginMessage.textContent = message;
-    }
-}
-
-
-function showRegisterMessage(message) {
-    if (registerMessage) {
-        registerMessage.textContent = message;
-    }
-}
-
-
-function showLinkMessage(message) {
-    if (linkMessage) {
-        linkMessage.textContent = message;
-    }
-}
-
-
-function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, character => {
-
-        const replacements = {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-        };
-
-        return replacements[character];
-    });
-}
-
-
-function showLogin() {
-    loginScreen.hidden = false;
-    registerScreen.hidden = true;
-    linkScreen.hidden = true;
-    adminApp.hidden = true;
-    studentApp.hidden = true;
-}
-
-
-function showRegister() {
-    loginScreen.hidden = true;
-    registerScreen.hidden = false;
-    linkScreen.hidden = true;
-    adminApp.hidden = true;
-    studentApp.hidden = true;
-}
-
-
-function showLink() {
-    loginScreen.hidden = true;
-    registerScreen.hidden = true;
-    linkScreen.hidden = false;
-    adminApp.hidden = true;
-    studentApp.hidden = true;
-}
-
-
-function showAdmin() {
-    loginScreen.hidden = true;
-    registerScreen.hidden = true;
-    linkScreen.hidden = true;
-    adminApp.hidden = false;
-    studentApp.hidden = true;
-}
-
-
-function showStudent() {
-    loginScreen.hidden = true;
-    registerScreen.hidden = true;
-    linkScreen.hidden = true;
-    adminApp.hidden = true;
-    studentApp.hidden = false;
-}
-
-
-function getStudentByAdmission(admission) {
-    return students.find(student => {
-        return student.admission === admission;
-    });
-}
-
-
-function getBalanceByUid(uid) {
-    if (!uid) {
-        return {
-            balance: 0,
-            creditBalance: 0
-        };
-    }
-
-    return balances[uid] || {
-        balance: 0,
-        creditBalance: 0
-    };
-}
-
-
-function getDateValue(transaction) {
-
-    if (transaction.date) {
-        const date = new Date(transaction.date);
-
-        if (!Number.isNaN(date.getTime())) {
-            return date;
-        }
-    }
-
-    if (transaction.createdAt?.toDate) {
-        return transaction.createdAt.toDate();
-    }
-
-    return new Date(0);
-}
-
-
-function formatDate(transaction) {
-    const date = getDateValue(transaction);
-
-    if (date.getTime() === 0) {
-        return "Unknown date";
-    }
-
-    return date.toLocaleString();
-}
-
-
-function getTransactionProduct(transaction) {
-
-    if (transaction.product) {
-        return String(transaction.product).trim();
-    }
-
-    const type = String(transaction.type || "");
-
-    if (type.startsWith("Purchase:")) {
-        return type.substring("Purchase:".length).trim();
-    }
-
-    if (type.startsWith("Credit:")) {
-        return type.substring("Credit:".length).trim();
-    }
-
-    return "Unknown product";
-}
-
-
-function isPurchaseTransaction(transaction) {
-
-    const type = String(transaction.type || "").toLowerCase();
-
-    return (
-        type === "purchase" ||
-        type === "credit purchase" ||
-        type.startsWith("purchase:") ||
-        type.startsWith("credit:")
+```javascript
     );
 }
 
@@ -294,6 +11,144 @@ function isCreditPurchase(transaction) {
         type === "credit purchase" ||
         type.startsWith("credit:")
     );
+}
+
+
+// ============================================
+// STUDENT PASSWORD VERIFICATION + MONTHLY BONUS
+// ============================================
+
+async function verifyStudentPurchasePassword(student, password) {
+    if (!password || password.length < 6) {
+        throw new Error("PASSWORD_REQUIRED");
+    }
+
+    const invitationSnapshot = await getDoc(
+        doc(db, "studentInvitations", student.admission)
+    );
+
+    if (!invitationSnapshot.exists()) throw new Error("STUDENT_EMAIL_NOT_FOUND");
+
+    const invitation = invitationSnapshot.data();
+    if (!invitation.approved || !invitation.claimed || invitation.authUid !== student.authUid) {
+        throw new Error("STUDENT_ACCOUNT_NOT_LINKED");
+    }
+
+    await passwordCheckPersistenceReady;
+    try {
+        await signInWithEmailAndPassword(passwordCheckAuth, invitation.email, password);
+        if (passwordCheckAuth.currentUser?.uid !== student.authUid) {
+            throw new Error("WRONG_STUDENT_ACCOUNT");
+        }
+    } finally {
+        if (passwordCheckAuth.currentUser) await signOut(passwordCheckAuth);
+    }
+}
+
+function currentMonthKey(date = new Date()) {
+    return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+}
+
+async function maybeAwardMonthlyPurchaseBonus(student) {
+    const now = new Date();
+    const monthKey = currentMonthKey(now);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const monthlyTransactionsQuery = query(
+        collection(db, "transactions"),
+        where("admission", "==", student.admission)
+    );
+    const snapshot = await getDocs(monthlyTransactionsQuery);
+    const monthlySpend = snapshot.docs
+        .map(item => item.data())
+        .filter(item => isPurchaseTransaction(item))
+        .filter(item => {
+            const date = getDateValue(item);
+            return date >= monthStart && date < nextMonthStart;
+        })
+        .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+
+    if (monthlySpend < 70000) return false;
+
+    const bonusId = student.authUid + "_" + monthKey;
+    const bonusReference = doc(db, "monthlyBonuses", bonusId);
+    const balanceReference = doc(db, "balances", student.authUid);
+    const bonusTransactionReference = doc(collection(db, "transactions"));
+
+    const awarded = await runTransaction(db, async function(firebaseTransaction) {
+        const bonusSnapshot = await firebaseTransaction.get(bonusReference);
+        if (bonusSnapshot.exists()) return false;
+
+        const balanceSnapshot = await firebaseTransaction.get(balanceReference);
+        if (!balanceSnapshot.exists()) throw new Error("BALANCE_NOT_FOUND");
+
+        const currentBalance = Number(balanceSnapshot.data().balance || 0);
+        const currentCredit = Number(balanceSnapshot.data().creditBalance || 0);
+
+        firebaseTransaction.update(balanceReference, {
+            balance: currentBalance + 5000,
+            creditBalance: currentCredit
+        });
+        firebaseTransaction.set(bonusReference, {
+            uid: student.authUid,
+            admission: student.admission,
+            month: monthKey,
+            target: 70000,
+            purchaseTotal: monthlySpend,
+            bonusAmount: 5000,
+            acknowledged: false,
+            createdAt: serverTimestamp()
+        });
+        firebaseTransaction.set(bonusTransactionReference, {
+            admission: student.admission,
+            studentName: student.name,
+            type: "Monthly Bonus",
+            product: "Monthly purchase target reward",
+            amount: 5000,
+            month: monthKey,
+            date: new Date().toISOString(),
+            createdAt: serverTimestamp()
+        });
+        return true;
+    });
+
+    return awarded;
+}
+
+async function showPendingMonthlyBonus(uid) {
+    // Check all months so an unacknowledged message does not disappear
+    // merely because the calendar month has changed.
+    const bonusQuery = query(
+        collection(db, "monthlyBonuses"),
+        where("uid", "==", uid)
+    );
+    const bonusSnapshot = await getDocs(bonusQuery);
+    const pendingBonus = bonusSnapshot.docs
+        .map(item => ({ id: item.id, ...item.data() }))
+        .filter(item => item.acknowledged !== true)
+        .sort((a, b) => String(b.month || "").localeCompare(String(a.month || "")))[0];
+
+    if (!pendingBonus) return;
+
+    const bonusReference = doc(db, "monthlyBonuses", pendingBonus.id);
+    const modal = document.getElementById("monthly-bonus-modal");
+    const okButton = document.getElementById("bonus-modal-ok");
+    if (!modal || !okButton) return;
+
+    modal.hidden = false;
+    okButton.onclick = async function() {
+        okButton.disabled = true;
+        try {
+            await updateDoc(bonusReference, { acknowledged: true, acknowledgedAt: serverTimestamp() });
+            modal.hidden = true;
+        } catch (error) {
+            console.error("Could not acknowledge bonus:", error);
+            alert("The message could not be closed yet. Please try again.");
+        } finally {
+            okButton.disabled = false;
+        }
+    };
 }
 
 
@@ -744,7 +599,89 @@ if (linkForm) {
             const invitationSnapshot = await getDoc(invitationReference);
 
             if (!invitationSnapshot.exists()) {
+                showLinkMessage(
+                    "No approved invitation was found for this admission number. Contact the canteen administrator."
+                );
+                return;
+            }
 
+            const invitation = invitationSnapshot.data();
+
+            if (!invitation.approved) {
+                showLinkMessage(
+                    "Your student account has not yet been approved."
+                );
+                return;
+            }
+
+            if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
+                showLinkMessage(
+                    "This admission number is linked to a different email address."
+                );
+                return;
+            }
+
+            if (invitation.claimed) {
+                showLinkMessage(
+                    "This student account has already been linked."
+                );
+                return;
+            }
+
+            const studentSnapshot = await getDoc(studentReference);
+
+            if (!studentSnapshot.exists()) {
+                showLinkMessage("Student record not found.");
+                return;
+            }
+
+            const batch = writeBatch(db);
+
+            batch.update(studentReference, {
+                authUid: user.uid
+            });
+
+            batch.update(invitationReference, {
+                claimed: true,
+                authUid: user.uid,
+                claimedAt: serverTimestamp()
+            });
+
+            batch.set(
+                doc(db, "balances", user.uid),
+                {
+                    admission: admission,
+                    balance: 0,
+                    creditBalance: 0
+                },
+                { merge: true }
+            );
+
+            await batch.commit();
+
+            showLinkMessage("Your student account has been linked successfully.");
+
+            const linkedStudent = {
+                ...studentSnapshot.data(),
+                authUid: user.uid
+            };
+
+            currentStudentUid = user.uid;
+
+            showStudent();
+
+            await loadStudentPortal(user.uid, linkedStudent);
+
+        } catch (error) {
+
+            console.error("Student account linking error:", error);
+
+            showLinkMessage(
+                "Unable to link your account. Please try again or contact the administrator."
+            );
+        }
+    });
+}
                 showLinkMessage(
                     "No approved registration was found. Check your admission number or contact the administrator."
                 );
@@ -954,8 +891,17 @@ if (studentForm) {
 
 
 // ============================================
-// 13. DISPLAY AND SEARCH STUDENTS
+// 13. DISPLAY STUDENTS
 // ============================================
+
+const studentSearchInput = document.getElementById("student-search");
+if (studentSearchInput) {
+    studentSearchInput.addEventListener("input", function() {
+        studentSearchTerm = studentSearchInput.value.trim();
+        displayStudents();
+    });
+}
+
 
 function displayStudents() {
 
@@ -974,33 +920,20 @@ function displayStudents() {
         return;
     }
 
-    const searchTerm = studentSearchInput
-        ? studentSearchInput.value.trim().toLowerCase()
-        : "";
 
-    const filteredStudents = students.filter(student => {
-
-        const name = String(student.name || "").toLowerCase();
-        const admission = String(student.admission || "").toLowerCase();
-
-        return (
-            name.includes(searchTerm) ||
-            admission.includes(searchTerm)
-        );
+    const visibleStudents = students.filter(student => {
+        const search = studentSearchTerm.toLowerCase();
+        return !search ||
+            String(student.name || "").toLowerCase().includes(search) ||
+            String(student.admission || "").toLowerCase().includes(search);
     });
 
-    if (filteredStudents.length === 0) {
-
-        studentList.innerHTML = `
-            <tr>
-                <td colspan="6">No matching students found.</td>
-            </tr>
-        `;
-
+    if (visibleStudents.length === 0) {
+        studentList.innerHTML = `<tr><td colspan="6">No matching students found.</td></tr>`;
         return;
     }
 
-    filteredStudents.forEach(student => {
+    visibleStudents.forEach(student => {
 
         const financialRecord = getBalanceByUid(student.authUid);
 
@@ -1028,16 +961,6 @@ function displayStudents() {
 }
 
 
-// SEARCH STUDENTS WHILE TYPING
-
-if (studentSearchInput) {
-
-    studentSearchInput.addEventListener("input", function() {
-
-        displayStudents();
-
-    });
-}
 // ============================================
 // 14. DELETE STUDENT
 // ============================================
@@ -1060,6 +983,47 @@ if (studentList) {
 
         if (Number(financialRecord.creditBalance || 0) > 0) {
 
+            alert(
+                "This student has outstanding credit. Clear the credit before deleting the student."
+            );
+
+            return;
+        }
+
+        const confirmed = confirm(
+            "Are you sure you want to delete " + student.name + "?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+
+            const batch = writeBatch(db);
+
+            batch.delete(doc(db, "students", admission));
+
+            batch.delete(doc(db, "studentInvitations", admission));
+
+            if (student.authUid) {
+                batch.delete(doc(db, "balances", student.authUid));
+            }
+
+            await batch.commit();
+
+            alert("Student record deleted.");
+
+            await loadAdminData();
+
+            refreshDisplays();
+
+        } catch (error) {
+
+            console.error("Delete student error:", error);
+
+            alert("Unable to delete the student. Check your Firebase rules.");
+        }
+    });
+}
             alert(
                 "This student still has unpaid credit. Clear the credit before deleting the student."
             );
@@ -1355,16 +1319,165 @@ if (purchaseForm) {
         event.preventDefault();
 
         const admission = getValue("purchase-student-id");
+        const studentPassword = document.getElementById("purchase-student-password")?.value || "";
         const student = getStudentByAdmission(admission);
         const items = readOrderItems();
 
         if (!student) {
+            alert("Student not found. Check the admission number.");
+            return;
+        }
+
+        if (!student.authUid) {
+            alert("This student has not linked their account yet.");
+            return;
+        }
+
+        if (!studentPassword) {
+            alert("The student must enter their account password to authorize the purchase.");
+            return;
+        }
+
+        if (items.length === 0) {
+            alert("Add at least one product to the order.");
+            return;
+        }
+
+        const invalidItem = items.find(item =>
+            !item.product ||
+            !Number.isFinite(item.unitPrice) ||
+            item.unitPrice <= 0 ||
+            !Number.isInteger(item.quantity) ||
+            item.quantity <= 0
+        );
+
+        if (invalidItem) {
+            alert("Check every product name, price and quantity.");
+            return;
+        }
+
+        const total = items.reduce((sum, item) => sum + item.lineTotal, 0);
+
+        if (!Number.isSafeInteger(total) || total <= 0) {
+            alert("The order total is invalid.");
+            return;
+        }
+
+        try {
+
+            await verifyStudentPurchasePassword(student, studentPassword);
+
+            const current = getBalanceByUid(student.authUid);
+
+            if (Number(current.balance || 0) < total) {
+                alert("The student does not have enough money in their wallet.");
+                return;
+            }
+
+            const newBalance = Number(current.balance || 0) - total;
+
+            const batch = writeBatch(db);
+
+            batch.set(
+                doc(db, "balances", student.authUid),
+                {
+                    admission: student.admission,
+                    balance: newBalance,
+                    creditBalance: Number(current.creditBalance || 0)
+                }
+            );
+
+            const orderReference = doc(collection(db, "orders"));
+
+            const orderData = {
+                admission: student.admission,
+                studentName: student.name,
+                items: items,
+                total: total,
+                status: "Pending",
+                date: new Date().toISOString(),
+                createdAt: serverTimestamp()
+            };
+
+            batch.set(orderReference, orderData);
+
+            items.forEach(item => {
+
+                const transactionReference = doc(
+                    collection(db, "transactions")
+                );
+
+                batch.set(transactionReference, {
+                    admission: student.admission,
+                    studentName: student.name,
+                    type: "Purchase",
+                    product: item.product,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    amount: item.lineTotal,
+                    orderId: orderReference.id,
+                    date: new Date().toISOString(),
+                    createdAt: serverTimestamp()
+                });
+            });
+
+            await batch.commit();
+
+            purchaseForm.reset();
+
+            if (orderItemsContainer) {
+                orderItemsContainer.innerHTML = "";
+                addOrderItemRow();
+            }
+
+            updateOrderTotal();
+
+            await loadAdminData();
+
+            refreshDisplays();
+
+            alert("Order submitted successfully.");
+
+        } catch (error) {
+
+            console.error("Purchase error:", error);
+
+            if (error.message === "PASSWORD_REQUIRED") {
+                alert("Enter the student's account password.");
+            } else if (error.message === "STUDENT_EMAIL_NOT_FOUND") {
+                alert("The student's approved email could not be found.");
+            } else if (error.message === "STUDENT_ACCOUNT_NOT_LINKED") {
+                alert("The student's account has not been linked correctly.");
+            } else if (error.message === "WRONG_STUDENT_ACCOUNT") {
+                alert("The password belongs to a different student account.");
+            } else if (error.code === "auth/invalid-credential" ||
+                       error.code === "auth/wrong-password" ||
+                       error.code === "auth/user-not-found") {
+                alert("The student password is incorrect.");
+            } else {
+                alert("The purchase could not be completed. Check the connection and try again.");
+            }
+        }
+    });
+}
             alert("Please enter a valid student admission number.");
             return;
         }
 
         if (!student.authUid) {
             alert("This student has not linked their account yet.");
+            return;
+        }
+
+        try {
+            await verifyStudentPurchasePassword(student, studentPassword);
+        } catch (passwordError) {
+            console.error("Purchase password verification failed:", passwordError);
+            alert(passwordError.code === "auth/invalid-credential" || passwordError.code === "auth/wrong-password"
+                ? "Incorrect student password. The purchase was not submitted."
+                : passwordError.message === "PASSWORD_REQUIRED"
+                    ? "Ask the student to enter their account password."
+                    : "Could not verify this student's account. Check the account link and try again.");
             return;
         }
 
@@ -1461,6 +1574,13 @@ if (purchaseForm) {
                     });
                 });
             });
+
+            try {
+                await maybeAwardMonthlyPurchaseBonus(student);
+            } catch (bonusError) {
+                console.error("Monthly bonus calculation failed:", bonusError);
+                alert("The purchase was saved, but the monthly bonus could not be processed. Check Firestore rules.");
+            }
 
             await loadAdminData();
             refreshDisplays();
@@ -1645,6 +1765,41 @@ if (creditForm) {
                 product
             );
 
+            try {
+                await maybeAwardMonthlyPurchaseBonus(student);
+            } catch (bonusError) {
+                console.error("Monthly bonus calculation failed:", bonusError);
+                alert("Credit purchase was recorded, but the monthly bonus could not be processed. Check Firestore rules.");
+            }
+
+            await loadAdminData();
+            refreshDisplays();
+            creditForm.reset();
+
+            alert("Credit purchase recorded successfully.");
+
+        } catch (error) {
+
+            console.error("Credit error:", error);
+
+            alert("Could not record the credit purchase.");
+        }
+    });
+}
+                Number(current.balance || 0),
+                newCreditBalance,
+                product
+            );
+
+            try {
+                await maybeAwardMonthlyPurchaseBonus(student);
+            } catch (bonusError) {
+                console.error("Monthly bonus calculation failed:", bonusError);
+                alert("Credit purchase was recorded, but the monthly bonus could not be processed. Check Firestore rules.");
+            }
+
+            await loadAdminData();
+            refreshDisplays();
             creditForm.reset();
 
             alert("Credit purchase recorded successfully.");
@@ -2001,8 +2156,6 @@ function updateReports() {
         reportRepayments.textContent = formatMoney(totalRepayments);
     }
 }
-
-
 // ============================================
 // 25. STATISTICS DATE FILTER
 // ============================================
@@ -2438,9 +2591,9 @@ async function loadStudentPortal(uid, student) {
     await displayStudentPurchaseHistory(student.admission);
 
 
-    // LOAD STUDENT DIRECTORY
-
-    await displayStudentDirectory();
+    // Student directory is intentionally not shown in the student portal.
+    // Show any unacknowledged bonus announcement for the current month.
+    await showPendingMonthlyBonus(uid);
 }
 
 
@@ -2539,204 +2692,3 @@ async function displayStudentPurchaseHistory(admission) {
         `;
     }
 }
-
-
-
-// ============================================
-// 31. STUDENT DIRECTORY
-// ============================================
-
-async function displayStudentDirectory() {
-
-    const directory = document.getElementById(
-        "student-directory-list"
-    );
-
-    if (!directory) return;
-
-    directory.innerHTML = `
-        <tr>
-            <td colspan="3">Loading students...</td>
-        </tr>
-    `;
-
-    try {
-
-        const directorySnapshot = await getDocs(
-            collection(db, "students")
-        );
-
-        const directoryStudents = directorySnapshot.docs.map(document => ({
-            ...document.data(),
-            documentId: document.id
-        }));
-
-        directoryStudents.sort((a, b) =>
-            String(a.name || "").localeCompare(String(b.name || ""))
-        );
-
-        directory.innerHTML = "";
-
-        if (directoryStudents.length === 0) {
-
-            directory.innerHTML = `
-                <tr>
-                    <td colspan="3">No students found.</td>
-                </tr>
-            `;
-
-            return;
-        }
-
-        directoryStudents.forEach(student => {
-
-            const row = document.createElement("tr");
-
-            row.innerHTML = `
-                <td>${escapeHTML(student.admission)}</td>
-                <td>${escapeHTML(student.name)}</td>
-                <td>${escapeHTML(student.studentClass)}</td>
-            `;
-
-            directory.appendChild(row);
-        });
-
-    } catch (error) {
-
-        console.error("Student directory error:", error);
-
-        directory.innerHTML = `
-            <tr>
-                <td colspan="3">Unable to load student directory.</td>
-            </tr>
-        `;
-    }
-}
-
-// ============================================
-// 32. STUDENT FEEDBACK SUBMISSION
-// ============================================
-
-const feedbackForm = document.getElementById("feedback-form");
-
-if (feedbackForm) {
-
-    feedbackForm.addEventListener("submit", async function(event) {
-
-        event.preventDefault();
-
-        const user = auth.currentUser;
-        const name = getValue("feedback-name");
-        const email = getValue("feedback-email").toLowerCase();
-        const category = getValue("feedback-category") || "General";
-        const message = getValue("feedback-message");
-        const statusElement = document.getElementById("feedback-status");
-
-        if (!user || !user.emailVerified) {
-            if (statusElement) {
-                statusElement.textContent = "Please log in with your verified student account before submitting feedback.";
-            }
-            return;
-        }
-
-        if (!name || !email || !message) {
-            if (statusElement) {
-                statusElement.textContent = "Please complete all feedback fields.";
-            }
-            return;
-        }
-
-        try {
-
-            if (statusElement) {
-                statusElement.textContent = "Submitting your feedback...";
-            }
-
-            const feedbackReference = doc(collection(db, "feedback"));
-            const batch = writeBatch(db);
-
-            batch.set(feedbackReference, {
-                name: name,
-                email: email,
-                category: category,
-                message: message,
-                userUid: user.uid,
-                status: "New",
-                date: new Date().toISOString(),
-                createdAt: serverTimestamp()
-            });
-
-            await batch.commit();
-
-            if (statusElement) {
-                statusElement.textContent = "Thank you! Your feedback has been submitted successfully.";
-            }
-
-            feedbackForm.reset();
-
-        } catch (error) {
-
-            console.error("Feedback submission error:", error);
-
-            if (statusElement) {
-                statusElement.textContent = "Unable to submit feedback. Please try again or contact the administrator.";
-            }
-        }
-    });
-}
-
-
-// ============================================
-// 33. ADMIN MARKS FEEDBACK AS REVIEWED
-// ============================================
-
-const feedbackList = document.getElementById("feedback-list");
-
-if (feedbackList) {
-
-    feedbackList.addEventListener("click", async function(event) {
-
-        const button = event.target.closest(".review-feedback");
-
-        if (!button) return;
-
-        const feedbackId = button.dataset.id;
-
-        if (!feedbackId) return;
-
-        try {
-
-            button.disabled = true;
-            button.textContent = "Updating...";
-
-            const feedbackReference = doc(db, "feedback", feedbackId);
-            const batch = writeBatch(db);
-
-            batch.update(feedbackReference, {
-                status: "Reviewed",
-                reviewedAt: serverTimestamp()
-            });
-
-            await batch.commit();
-
-            await loadAdminData();
-            refreshDisplays();
-
-        } catch (error) {
-
-            console.error("Feedback review error:", error);
-            alert("Could not update feedback status. Check your Firebase rules and try again.");
-            button.disabled = false;
-            button.textContent = "Mark as Reviewed";
-        }
-    });
-}
-
-
-// ============================================
-// 34. APPLICATION READY
-// ============================================
-
-console.log(
-    "Smart Canteen Manager Firebase application loaded successfully."
-);
