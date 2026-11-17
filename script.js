@@ -2,7 +2,7 @@
 // ============================================
 // SMART CANTEEN MANAGER
 // FIREBASE VERSION
-// STUDENT SELF-REGISTRATION + ACCOUNT LINKING
+// STUDENT SELF-REGISTRATION + ACCOUNT LINKINGD
 // STUDENT PURCHASE HISTORY + STATISTICS
 // ============================================
 
@@ -65,6 +65,7 @@ const studentLogoutButton = document.getElementById("student-logout-button");
 
 const studentForm = document.getElementById("student-form");
 const studentList = document.getElementById("student-list");
+const studentSearchInput = document.getElementById("student-search-input");
 const admissionInput = document.getElementById("admission");
 
 const depositForm = document.getElementById("deposit-form");
@@ -953,7 +954,7 @@ if (studentForm) {
 
 
 // ============================================
-// 13. DISPLAY STUDENTS
+// 13. DISPLAY AND SEARCH STUDENTS
 // ============================================
 
 function displayStudents() {
@@ -973,8 +974,33 @@ function displayStudents() {
         return;
     }
 
+    const searchTerm = studentSearchInput
+        ? studentSearchInput.value.trim().toLowerCase()
+        : "";
 
-    students.forEach(student => {
+    const filteredStudents = students.filter(student => {
+
+        const name = String(student.name || "").toLowerCase();
+        const admission = String(student.admission || "").toLowerCase();
+
+        return (
+            name.includes(searchTerm) ||
+            admission.includes(searchTerm)
+        );
+    });
+
+    if (filteredStudents.length === 0) {
+
+        studentList.innerHTML = `
+            <tr>
+                <td colspan="6">No matching students found.</td>
+            </tr>
+        `;
+
+        return;
+    }
+
+    filteredStudents.forEach(student => {
 
         const financialRecord = getBalanceByUid(student.authUid);
 
@@ -998,6 +1024,18 @@ function displayStudents() {
         `;
 
         studentList.appendChild(row);
+    });
+}
+
+
+// SEARCH STUDENTS WHILE TYPING
+
+if (studentSearchInput) {
+
+    studentSearchInput.addEventListener("input", function() {
+
+        displayStudents();
+
     });
 }
 // ============================================
@@ -2503,6 +2541,7 @@ async function displayStudentPurchaseHistory(admission) {
 }
 
 
+
 // ============================================
 // 31. STUDENT DIRECTORY
 // ============================================
@@ -2515,25 +2554,28 @@ async function displayStudentDirectory() {
 
     if (!directory) return;
 
-    directory.innerHTML = "";
+    directory.innerHTML = `
+        <tr>
+            <td colspan="3">Loading students...</td>
+        </tr>
+    `;
 
     try {
 
-        const snapshot = await getDocs(
+        const directorySnapshot = await getDocs(
             collection(db, "students")
         );
 
-        const directoryStudents = snapshot.docs.map(document => {
-            return document.data();
-        });
+        const directoryStudents = directorySnapshot.docs.map(document => ({
+            ...document.data(),
+            documentId: document.id
+        }));
 
-        directoryStudents.sort((a, b) => {
+        directoryStudents.sort((a, b) =>
+            String(a.name || "").localeCompare(String(b.name || ""))
+        );
 
-            return String(a.name || "").localeCompare(
-                String(b.name || "")
-            );
-        });
-
+        directory.innerHTML = "";
 
         if (directoryStudents.length === 0) {
 
@@ -2545,7 +2587,6 @@ async function displayStudentDirectory() {
 
             return;
         }
-
 
         directoryStudents.forEach(student => {
 
@@ -2571,7 +2612,6 @@ async function displayStudentDirectory() {
         `;
     }
 }
-
 
 // ============================================
 // 32. STUDENT FEEDBACK SUBMISSION
