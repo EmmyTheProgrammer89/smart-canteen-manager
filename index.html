@@ -82,6 +82,7 @@
     </div>
 
     <div class="main-content" id="dashboard-section">
+
         <header>
             <h1>Administrator Dashboard</h1>
             <p>Welcome to Smart Canteen Manager</p>
@@ -89,10 +90,22 @@
 
         <!-- DASHBOARD CARDS -->
         <section class="cards">
-            <div class="card"><h3>Total Students</h3><p id="total-students">0</p></div>
-            <div class="card"><h3>Total Deposits</h3><p id="dashboard-deposits">0 RWF</p></div>
-            <div class="card"><h3>Total Sales</h3><p id="dashboard-sales">0 RWF</p></div>
-            <div class="card"><h3>Outstanding Credit</h3><p id="dashboard-credit">0 RWF</p></div>
+            <div class="card">
+                <h3>Total Students</h3>
+                <p id="total-students">0</p>
+            </div>
+            <div class="card">
+                <h3>Total Deposits</h3>
+                <p id="dashboard-deposits">0 RWF</p>
+            </div>
+            <div class="card">
+                <h3>Total Sales</h3>
+                <p id="dashboard-sales">0 RWF</p>
+            </div>
+            <div class="card">
+                <h3>Outstanding Credit</h3>
+                <p id="dashboard-credit">0 RWF</p>
+            </div>
         </section>
 
         <section class="welcome">
@@ -104,26 +117,50 @@
         <section id="students-section">
             <h2>Student Management</h2>
             <p>Register and manage school students.</p>
+
             <form id="student-form">
                 <label for="admission">Admission Number</label>
                 <input type="text" id="admission" placeholder="Automatically generated" readonly>
+
                 <label for="student-name">Full Name</label>
                 <input type="text" id="student-name" placeholder="Enter student name" required>
+
                 <label for="student-class">Class</label>
                 <input type="text" id="student-class" placeholder="Example: S4" required>
+
                 <label for="phone">Phone Number (Optional)</label>
                 <input type="tel" id="phone" placeholder="Enter phone number">
+
                 <label for="student-email">Student Email Address</label>
                 <input type="email" id="student-email" placeholder="Enter student's email address" required>
+
                 <button type="submit">Register Student</button>
             </form>
+
             <h3>Registered Students</h3>
+
+            <!-- STUDENT SEARCH -->
+            <div class="student-search">
+                <label for="student-search-input">Search Students</label>
+                <input
+                    type="search"
+                    id="student-search-input"
+                    placeholder="Search by name or admission number..."
+                >
+            </div>
+
             <div class="table-container">
                 <table>
-                    <thead><tr>
-                        <th>Admission Number</th><th>Student Name</th><th>Class</th>
-                        <th>Phone</th><th>Balance (RWF)</th><th>Action</th>
-                    </tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Admission Number</th>
+                            <th>Student Name</th>
+                            <th>Class</th>
+                            <th>Phone</th>
+                            <th>Balance (RWF)</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
                     <tbody id="student-list"></tbody>
                 </table>
             </div>
@@ -135,8 +172,10 @@
             <form id="deposit-form">
                 <label for="deposit-student-id">Student Admission Number</label>
                 <input type="text" id="deposit-student-id" placeholder="Enter admission number" required>
+
                 <label for="deposit-amount">Deposit Amount (RWF)</label>
                 <input type="number" id="deposit-amount" placeholder="Enter amount" min="1" required>
+
                 <button type="submit">Add Deposit</button>
             </form>
         </section>
@@ -144,16 +183,27 @@
         <!-- 7. TRANSACTION HISTORY -->
         <section id="transactions-section">
             <h2>Transaction History</h2>
+
             <div class="transaction-actions">
-                <label><input type="checkbox" id="select-all-transactions"> Select All</label>
+                <label>
+                    <input type="checkbox" id="select-all-transactions">
+                    Select All
+                </label>
                 <button type="button" id="delete-selected-transactions">Delete Selected</button>
             </div>
+
             <div class="table-container">
                 <table>
-                    <thead><tr>
-                        <th>Select</th><th>Admission Number</th><th>Student Name</th>
-                        <th>Transaction Type</th><th>Amount (RWF)</th><th>Date</th>
-                    </tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Select</th>
+                            <th>Admission Number</th>
+                            <th>Student Name</th>
+                            <th>Transaction Type</th>
+                            <th>Amount (RWF)</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
                     <tbody id="transaction-list"></tbody>
                 </table>
             </div>
@@ -163,22 +213,36 @@
         <section id="purchases-section">
             <h2>Create a Customer Order</h2>
             <p>Add every product the customer wants before submitting the order.</p>
+
             <form id="purchase-form" class="purchase-order-form">
                 <label for="purchase-student-id">Student Admission Number</label>
                 <input type="text" id="purchase-student-id" placeholder="Enter student admission number" required>
 
                 <h3>Order items</h3>
+
                 <div class="order-item-heading" aria-hidden="true">
-                    <span>Product</span><span>Unit price (RWF)</span><span>Quantity</span><span>Action</span>
+                    <span>Product</span>
+                    <span>Unit price (RWF)</span>
+                    <span>Quantity</span>
+                    <span>Action</span>
                 </div>
+
                 <div id="order-items-container"></div>
-                <button type="button" id="add-order-item-button" class="secondary-button">+ Add another product</button>
+
+                <button type="button" id="add-order-item-button" class="secondary-button">
+                    + Add another product
+                </button>
 
                 <div class="order-total-panel">
                     <span>Order total</span>
                     <strong id="order-total">0 RWF</strong>
                 </div>
-                <p class="order-help">Check the products, prices and quantities before submitting. The total will be deducted from the student's wallet when the order is submitted.</p>
+
+                <p class="order-help">
+                    Check the products, prices and quantities before submitting.
+                    The total will be deducted from the student's wallet when the order is submitted.
+                </p>
+
                 <button type="submit" id="submit-order-button">Submit Order</button>
             </form>
         </section>
@@ -187,6 +251,7 @@
         <section id="pending-orders-section">
             <h2>Order Management</h2>
             <p>Orders remain here until the administrator confirms that they have been handed to the customer.</p>
+
             <div class="table-container">
                 <table class="orders-table">
                     <thead>
@@ -204,18 +269,22 @@
             </div>
         </section>
 
-        <!-- 9. CREDIT MANAGEMENT -->
+        <!-- 10. CREDIT MANAGEMENT -->
         <section id="credit-section">
             <h2>Credit Management</h2>
             <p>Manage student purchases made on credit and repayments.</p>
+
             <h3>Record Credit Purchase</h3>
             <form id="credit-form">
                 <label for="credit-student-id">Student Admission Number</label>
                 <input type="text" id="credit-student-id" placeholder="Enter admission number" required>
+
                 <label for="credit-description">Product Purchased</label>
                 <input type="text" id="credit-description" placeholder="Example: Bread" required>
+
                 <label for="credit-amount">Credit Amount (RWF)</label>
                 <input type="number" id="credit-amount" placeholder="Enter amount" min="1" required>
+
                 <button type="submit">Record Credit</button>
             </form>
 
@@ -223,34 +292,54 @@
             <form id="repayment-form">
                 <label for="repayment-student-id">Student Admission Number</label>
                 <input type="text" id="repayment-student-id" placeholder="Enter admission number" required>
+
                 <label for="repayment-amount">Repayment Amount (RWF)</label>
                 <input type="number" id="repayment-amount" placeholder="Enter repayment amount" min="1" required>
+
                 <button type="submit">Record Repayment</button>
             </form>
 
             <h3>Outstanding Student Credit</h3>
+
             <div class="table-container">
                 <table>
-                    <thead><tr>
-                        <th>Admission Number</th><th>Student Name</th><th>Outstanding Credit (RWF)</th>
-                    </tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Admission Number</th>
+                            <th>Student Name</th>
+                            <th>Outstanding Credit (RWF)</th>
+                        </tr>
+                    </thead>
                     <tbody id="credit-list"></tbody>
                 </table>
             </div>
         </section>
 
-        <!-- 10. FINANCIAL REPORTS -->
+        <!-- 11. FINANCIAL REPORTS -->
         <section id="reports-section">
             <h2>Financial Reports</h2>
+
             <div class="cards">
-                <div class="card"><h3>Total Deposits</h3><p id="report-deposits">0 RWF</p></div>
-                <div class="card"><h3>Total Sales</h3><p id="report-sales">0 RWF</p></div>
-                <div class="card"><h3>Outstanding Credit</h3><p id="report-credit">0 RWF</p></div>
-                <div class="card"><h3>Total Repayments</h3><p id="report-repayments">0 RWF</p></div>
+                <div class="card">
+                    <h3>Total Deposits</h3>
+                    <p id="report-deposits">0 RWF</p>
+                </div>
+                <div class="card">
+                    <h3>Total Sales</h3>
+                    <p id="report-sales">0 RWF</p>
+                </div>
+                <div class="card">
+                    <h3>Outstanding Credit</h3>
+                    <p id="report-credit">0 RWF</p>
+                </div>
+                <div class="card">
+                    <h3>Total Repayments</h3>
+                    <p id="report-repayments">0 RWF</p>
+                </div>
             </div>
         </section>
 
-        <!-- 11. STATISTICS -->
+        <!-- 12. STATISTICS -->
         <section id="statistics-section">
             <h2>Canteen Statistics</h2>
             <p>Analyze student purchasing activity and popular products.</p>
@@ -269,38 +358,59 @@
                     <p id="first-buyer">No purchases yet</p>
                     <small id="first-buyer-date"></small>
                 </div>
+
                 <div class="card">
                     <h3>Most Bought Product</h3>
                     <p id="most-bought-product">No purchases yet</p>
                     <small id="most-bought-count"></small>
                 </div>
-                <div class="card"><h3>Total Buyers</h3><p id="statistics-total-buyers">0</p></div>
-                <div class="card"><h3>Total Purchase Records</h3><p id="statistics-total-purchases">0</p></div>
+
+                <div class="card">
+                    <h3>Total Buyers</h3>
+                    <p id="statistics-total-buyers">0</p>
+                </div>
+
+                <div class="card">
+                    <h3>Total Purchase Records</h3>
+                    <p id="statistics-total-purchases">0</p>
+                </div>
             </div>
 
             <h3>Top Buying Students</h3>
+
             <div class="table-container">
                 <table>
-                    <thead><tr>
-                        <th>Rank</th><th>Admission Number</th><th>Student Name</th>
-                        <th>Purchase Records</th><th>Total Spent (RWF)</th>
-                    </tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Admission Number</th>
+                            <th>Student Name</th>
+                            <th>Purchase Records</th>
+                            <th>Total Spent (RWF)</th>
+                        </tr>
+                    </thead>
                     <tbody id="top-buyers-list"></tbody>
                 </table>
             </div>
 
             <h3>Popular Products</h3>
+
             <div class="table-container">
                 <table>
-                    <thead><tr>
-                        <th>Rank</th><th>Product</th><th>Number of Purchases</th><th>Total Sales (RWF)</th>
-                    </tr></thead>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Product</th>
+                            <th>Number of Purchases</th>
+                            <th>Total Sales (RWF)</th>
+                        </tr>
+                    </thead>
                     <tbody id="popular-products-list"></tbody>
                 </table>
             </div>
         </section>
 
-        <!-- 12. FEEDBACK MANAGEMENT (SELLER) -->
+        <!-- 13. FEEDBACK MANAGEMENT -->
         <section id="feedback-management-section">
             <h2>Feedback Management</h2>
             <p>Read feedback submitted by students and review their suggestions.</p>
@@ -322,11 +432,13 @@
                 </table>
             </div>
         </section>
+
     </div>
 </div>
 
-<!-- 13. STUDENT PORTAL -->
+<!-- 14. STUDENT PORTAL -->
 <div id="student-app" class="student-app" hidden>
+
     <header class="student-header">
         <div>
             <h1>Student Portal</h1>
@@ -346,111 +458,110 @@
     <!-- STUDENT WALLET AND CREDIT -->
     <section class="student-balance-section">
         <h2>My Wallet Balance</h2>
+
         <div class="card">
             <h3>Available Balance</h3>
             <p id="student-balance">Loading...</p>
         </div>
+
         <div class="card">
             <h3>Outstanding Credit</h3>
             <p id="student-credit-balance">Loading...</p>
         </div>
     </section>
 
-    <!-- STUDENT PURCHASE HISTORY: READ ONLY -->
+    <!-- STUDENT PURCHASE HISTORY -->
     <section id="student-purchase-history-section">
         <h2>My Purchase History</h2>
         <p>View the products you have purchased and their costs. This information is read-only.</p>
+
         <div class="card">
             <h3>Total Amount Spent</h3>
             <p id="student-total-spent">0 RWF</p>
         </div>
+
         <div class="table-container">
             <table>
-                <thead><tr>
-                    <th>Product</th><th>Purchase Type</th><th>Amount (RWF)</th><th>Date</th>
-                </tr></thead>
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Purchase Type</th>
+                        <th>Amount (RWF)</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
                 <tbody id="student-purchase-history-list"></tbody>
             </table>
         </div>
     </section>
 
-    <!-- STUDENT DIRECTORY -->
-    <section id="student-directory-section">
-        <h2>Student Directory</h2>
-        <p>View the registered students in your school.</p>
-        <div class="table-container">
-            <table>
-                <thead><tr>
-                    <th>Admission Number</th><th>Student Name</th><th>Class</th>
-                </tr></thead>
-                <tbody id="student-directory-list"></tbody>
-            </table>
-        </div>
-    </section>
+    <!-- STUDENT PORTAL FOOTER -->
+    <footer class="footer" id="student-footer">
+        <div class="footer-container">
 
-<footer class="footer" id="student-footer">
-    <div class="footer-container">
+            <div class="footer-info">
+                <h3>Smart Canteen Manager</h3>
+                <p>Making school canteen management easier.</p>
 
-        <div class="footer-info">
-            <h3>Smart Canteen Manager</h3>
-            <p>Making school canteen management easier.</p>
+                <h4>Contact Us</h4>
+                <p>
+                    Email:
+                    <a href="mailto:munyeshyakaemmanuel89@gmail.com">
+                        munyeshyakaemmanuel89@gmail.com
+                    </a>
+                </p>
+            </div>
 
-            <h4>Contact Us</h4>
-            <p>Email:
-                <a href="mailto:munyeshyakaemmanuel89@gmail.com">
-                   munyeshyakaemmanuel89@gmail.com
-                </a>
-            </p>
-        </div>
+            <div class="feedback-section">
+                <h3>Send Us Your Feedback</h3>
 
-        <div class="feedback-section">
-            <h3>Send Us Your Feedback</h3>
+                <form id="feedback-form">
+                    <label for="feedback-category">Feedback Category</label>
+                    <select id="feedback-category" required>
+                        <option value="">Select a category</option>
+                        <option value="Suggestion">Suggestion</option>
+                        <option value="Complaint">Complaint</option>
+                        <option value="Appreciation">Appreciation</option>
+                    </select>
 
-            <form id="feedback-form">
-                <label for="feedback-category">Feedback Category</label>
-                <select id="feedback-category" required>
-                    <option value="">Select a category</option>
-                    <option value="Suggestion">Suggestion</option>
-                    <option value="Complaint">Complaint</option>
-                    <option value="Appreciation">Appreciation</option>
-                </select>
-                <input
-                    type="text"
-                    id="feedback-name"
-                    placeholder="Your name"
-                    required
-                >
+                    <input
+                        type="text"
+                        id="feedback-name"
+                        placeholder="Your name"
+                        required
+                    >
 
-                <input
-                    type="email"
-                    id="feedback-email"
-                    placeholder="Your Email"
-                    required
-                >
+                    <input
+                        type="email"
+                        id="feedback-email"
+                        placeholder="Your Email"
+                        required
+                    >
 
-                <textarea
-                    id="feedback-message"
-                    placeholder="We would like to hear from you put your feedback here"
-                    rows="5"
-                    cols="30"
-                    required
-                ></textarea>
+                    <textarea
+                        id="feedback-message"
+                        placeholder="We would like to hear from you put your feedback here"
+                        rows="5"
+                        cols="30"
+                        required
+                    ></textarea>
 
-                <button type="submit">Submit Feedback</button>
-            </form>
+                    <button type="submit">Submit Feedback</button>
+                </form>
 
-            <p id="feedback-status"></p>
+                <p id="feedback-status"></p>
+            </div>
+
         </div>
 
-    </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Smart Canteen Manager. All rights reserved.</p>
+        </div>
+    </footer>
 
-    <div class="footer-bottom">
-        <p>&copy; 2026 Smart Canteen Manager. All rights reserved.</p>
-    </div>
-</footer>
 </div>
 
-<!-- 14. JAVASCRIPT MODULE -->
+<!-- 15. JAVASCRIPT MODULE -->
 <script type="module" src="script.js"></script>
 
 </body>
