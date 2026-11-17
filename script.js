@@ -90,6 +90,9 @@ const deleteSelectedTransactions = document.getElementById(
 );
 
 const statisticsPeriod = document.getElementById("statistics-period");
+const feedbackForm = document.getElementById("feedback-form");
+const feedbackList = document.getElementById("feedback-list");
+const feedbackStatus = document.getElementById("feedback-status");
 
 
 // ============================================
@@ -342,7 +345,6 @@ async function verifyStudentPurchasePassword(student, password) {
         if (passwordCheckAuth.currentUser) await signOut(passwordCheckAuth);
     }
 }
-
 function currentMonthKey(date = new Date()) {
     // Always use Rwanda local calendar months (Africa/Kigali).
     const parts = new Intl.DateTimeFormat("en-CA", {
@@ -356,33 +358,41 @@ function currentMonthKey(date = new Date()) {
     return `${year}-${month}`;
 }
 
-async function maybeAwardMonthlyPurchaseBonus(student) {
+async function maybeAwardMonthlyPurchaseBonus(student, knownMonthlySpend = null) {
     if (!student?.authUid || !student?.admission) return false;
 
     const monthKey = currentMonthKey(new Date());
-    const completedOrdersQuery = query(
-        collection(db, "orders"),
-        where("admission", "==", student.admission),
-        where("status", "==", "Completed")
-    );
-    const completedOrdersSnapshot = await getDocs(completedOrdersQuery);
+    let monthlySpend = knownMonthlySpend === null || knownMonthlySpend === undefined
+        ? Number.NaN
+        : Number(knownMonthlySpend);
 
-    // Only completed wallet orders count. Deposits, credit purchases,
-    // pending orders and preparing orders are deliberately excluded.
-    const monthlySpend = completedOrdersSnapshot.docs.reduce((sum, item) => {
-        const order = item.data();
-        const completedAt = order.completedAt?.toDate
-            ? order.completedAt.toDate()
-            : order.completedAt
-                ? new Date(order.completedAt)
-                : null;
+    // When no pre-calculated total is supplied, calculate this student's
+    // completed purchases for the current Rwanda calendar month.
+    if (!Number.isFinite(monthlySpend)) {
+        const completedOrdersQuery = query(
+            collection(db, "orders"),
+            where("admission", "==", student.admission),
+            where("status", "==", "Completed")
+        );
+        const completedOrdersSnapshot = await getDocs(completedOrdersQuery);
 
-        if (!completedAt || Number.isNaN(completedAt.getTime())) return sum;
-        if (currentMonthKey(completedAt) !== monthKey) return sum;
+        // Deposits, credit purchases, pending orders and preparing orders
+        // are deliberately excluded.
+        monthlySpend = completedOrdersSnapshot.docs.reduce((sum, item) => {
+            const order = item.data();
+            const completedAt = order.completedAt?.toDate
+                ? order.completedAt.toDate()
+                : order.completedAt
+                    ? new Date(order.completedAt)
+                    : null;
 
-        const amount = Number(order.total || 0);
-        return Number.isFinite(amount) && amount > 0 ? sum + amount : sum;
-    }, 0);
+            if (!completedAt || Number.isNaN(completedAt.getTime())) return sum;
+            if (currentMonthKey(completedAt) !== monthKey) return sum;
+
+            const amount = Number(order.total || 0);
+            return Number.isFinite(amount) && amount > 0 ? sum + amount : sum;
+        }, 0);
+    }
 
     if (monthlySpend < 70000) return false;
 
@@ -429,6 +439,50 @@ async function maybeAwardMonthlyPurchaseBonus(student) {
     });
 }
 
+async function retryPendingMonthlyBonuses() {
+    const monthKey = currentMonthKey(new Date());
+    const totalsByAdmission = {};
+
+    // Reuse the orders already loaded for the admin dashboard. This avoids
+    // making a separate Firestore query for every student on each login.
+    orders.forEach(order => {
+        if (order.status !== "Completed") return;
+
+        const completedAt = order.completedAt?.toDate
+            ? order.completedAt.toDate()
+            : order.completedAt
+                ? new Date(order.completedAt)
+                : null;
+
+        if (!completedAt || Number.isNaN(completedAt.getTime())) return;
+        if (currentMonthKey(completedAt) !== monthKey) return;
+
+        const amount = Number(order.total || 0);
+        if (!Number.isFinite(amount) || amount <= 0) return;
+
+        totalsByAdmission[order.admission] =
+            (totalsByAdmission[order.admission] || 0) + amount;
+    });
+
+    let awardedAnyBonus = false;
+
+    for (const student of students) {
+        const total = totalsByAdmission[student.admission] || 0;
+        if (total < 70000) continue;
+
+        try {
+            const awarded = await maybeAwardMonthlyPurchaseBonus(student, total);
+            if (awarded) awardedAnyBonus = true;
+        } catch (error) {
+            // One failed award should not stop other eligible students.
+            console.error(`Monthly bonus retry failed for ${student.admission}:`, error);
+        }
+    }
+
+    return awardedAnyBonus;
+}
+
+
 async function showPendingMonthlyBonus(uid) {
     // Check all months so an unacknowledged message does not disappear
     // merely because the calendar month has changed.
@@ -447,7 +501,6 @@ async function showPendingMonthlyBonus(uid) {
     const bonusReference = doc(db, "monthlyBonuses", pendingBonus.id);
     const modal = document.getElementById("monthly-bonus-modal");
     const okButton = document.getElementById("bonus-modal-ok");
-
     if (!modal || !okButton) return;
 
     modal.hidden = false;
@@ -768,8 +821,6 @@ async function loadAdminData() {
 
     updateAdmissionPreview();
 }
-
-
 // ============================================
 // 10. CHECK SIGNED-IN USER
 // ============================================
@@ -792,6 +843,13 @@ onAuthStateChanged(auth, async function(user) {
         try {
 
             await loadAdminData();
+
+            // Retry eligible monthly rewards in case a previous award attempt
+            // failed after an order was marked Completed.
+            const bonusWasAwarded = await retryPendingMonthlyBonuses();
+            if (bonusWasAwarded) {
+                await loadAdminData();
+            }
 
             refreshDisplays();
 
@@ -897,7 +955,8 @@ if (linkForm) {
             showLinkMessage("Enter your admission number.");
             return;
         }
-                try {
+
+        try {
 
             showLinkMessage("Checking your student record...");
 
@@ -1119,13 +1178,12 @@ if (studentForm) {
         }
     });
 }
-
-
 // ============================================
 // 13. DISPLAY STUDENTS
 // ============================================
 
 const studentSearchInput = document.getElementById("student-search");
+
 if (studentSearchInput) {
     studentSearchInput.addEventListener("input", function() {
         studentSearchTerm = studentSearchInput.value.trim();
@@ -1154,13 +1212,16 @@ function displayStudents() {
 
     const visibleStudents = students.filter(student => {
         const search = studentSearchTerm.toLowerCase();
+
         return !search ||
             String(student.name || "").toLowerCase().includes(search) ||
             String(student.admission || "").toLowerCase().includes(search);
     });
 
     if (visibleStudents.length === 0) {
-        studentList.innerHTML = `<tr><td colspan="6">No matching students found.</td></tr>`;
+        studentList.innerHTML = `
+            <tr><td colspan="6">No matching students found.</td></tr>
+        `;
         return;
     }
 
@@ -1190,6 +1251,8 @@ function displayStudents() {
         studentList.appendChild(row);
     });
 }
+
+
 // ============================================
 // 14. DELETE STUDENT
 // ============================================
@@ -1271,68 +1334,82 @@ async function recordFinancialTransaction(
     student,
     type,
     amount,
-    newBalance,
-    newCreditBalance,
     product = ""
 ) {
-
-    if (!student.authUid) {
-
-        throw new Error(
-            "This student has not linked an account yet."
-        );
+    if (!student?.authUid) {
+        throw new Error("This student has not linked an account yet.");
     }
 
-    const batch = writeBatch(db);
+    const numericAmount = Number(amount);
 
-    const balanceReference = doc(
-        db,
-        "balances",
-        student.authUid
-    );
+    if (!Number.isSafeInteger(numericAmount) || numericAmount <= 0) {
+        throw new Error("Enter a valid whole-number amount.");
+    }
 
-    const transactionReference = doc(
-        collection(db, "transactions")
-    );
+    const balanceReference = doc(db, "balances", student.authUid);
+    const transactionReference = doc(collection(db, "transactions"));
 
+    // Read the latest balance inside the transaction. This prevents two
+    // simultaneous deposits/repayments from overwriting each other's changes.
+    await runTransaction(db, async function(firebaseTransaction) {
 
-    // UPDATE STUDENT BALANCE
+        const balanceSnapshot = await firebaseTransaction.get(balanceReference);
 
-    batch.set(balanceReference, {
+        const currentData = balanceSnapshot.exists()
+            ? balanceSnapshot.data()
+            : {};
 
-        admission: student.admission,
+        let currentBalance = Number(currentData.balance || 0);
+        let currentCreditBalance = Number(currentData.creditBalance || 0);
 
-        balance: newBalance,
+        if (!Number.isFinite(currentBalance) || currentBalance < 0) {
+            throw new Error("The student's wallet balance is invalid.");
+        }
 
-        creditBalance: newCreditBalance
+        if (!Number.isFinite(currentCreditBalance) || currentCreditBalance < 0) {
+            throw new Error("The student's credit balance is invalid.");
+        }
 
+        if (type === "Deposit") {
+
+            currentBalance += numericAmount;
+
+        } else if (type === "Credit Purchase") {
+
+            currentCreditBalance += numericAmount;
+
+        } else if (type === "Repayment") {
+
+            if (numericAmount > currentCreditBalance) {
+                throw new Error("REPAYMENT_EXCEEDS_CREDIT");
+            }
+
+            currentCreditBalance -= numericAmount;
+
+        } else {
+
+            throw new Error(`Unsupported financial transaction type: ${type}`);
+        }
+
+        firebaseTransaction.set(balanceReference, {
+            admission: student.admission,
+            balance: currentBalance,
+            creditBalance: currentCreditBalance
+        });
+
+        const transactionData = {
+            admission: student.admission,
+            studentName: student.name,
+            type,
+            amount: numericAmount,
+            date: new Date().toISOString(),
+            createdAt: serverTimestamp()
+        };
+
+        if (product) transactionData.product = product;
+
+        firebaseTransaction.set(transactionReference, transactionData);
     });
-
-
-    // SAVE TRANSACTION
-
-    const transactionData = {
-
-        admission: student.admission,
-
-        studentName: student.name,
-
-        type: type,
-
-        amount: amount,
-
-        date: new Date().toISOString(),
-
-        createdAt: serverTimestamp()
-    };
-
-    if (product) {
-        transactionData.product = product;
-    }
-
-    batch.set(transactionReference, transactionData);
-
-    await batch.commit();
 
     await loadAdminData();
 
@@ -1348,7 +1425,7 @@ if (depositForm) {
 
     depositForm.addEventListener("submit", async function(event) {
 
-                                         event.preventDefault();
+        event.preventDefault();
 
         const admission = getValue("deposit-student-id");
         const amount = Number(getValue("deposit-amount"));
@@ -1372,17 +1449,10 @@ if (depositForm) {
 
         try {
 
-            const current = getBalanceByUid(student.authUid);
-
-            const newBalance =
-                Number(current.balance || 0) + amount;
-
             await recordFinancialTransaction(
                 student,
                 "Deposit",
-                amount,
-                newBalance,
-                Number(current.creditBalance || 0)
+                amount
             );
 
             depositForm.reset();
@@ -1397,8 +1467,6 @@ if (depositForm) {
         }
     });
 }
-
-
 // ============================================
 // 17. MULTI-ITEM CUSTOMER ORDERS
 // ============================================
@@ -1772,6 +1840,7 @@ if (pendingOrdersList) {
 
 
 // ============================================
+// ============================================
 // 18. RECORD CREDIT PURCHASE
 // ============================================
 
@@ -1796,7 +1865,8 @@ if (creditForm) {
             alert("This student has not linked their account yet.");
             return;
         }
-                if (!product) {
+
+        if (!product) {
             alert("Enter the product purchased.");
             return;
         }
@@ -1808,22 +1878,13 @@ if (creditForm) {
 
         try {
 
-            const current = getBalanceByUid(student.authUid);
-
-            const newCreditBalance =
-                Number(current.creditBalance || 0) + amount;
-
             await recordFinancialTransaction(
                 student,
                 "Credit Purchase",
                 amount,
-                Number(current.balance || 0),
-                newCreditBalance,
                 product
             );
 
-            await loadAdminData();
-            refreshDisplays();
             creditForm.reset();
 
             alert("Credit purchase recorded successfully.");
@@ -1868,28 +1929,12 @@ if (repaymentForm) {
             return;
         }
 
-        const current = getBalanceByUid(student.authUid);
-
-        if (amount > Number(current.creditBalance || 0)) {
-
-            alert(
-                "The repayment cannot be greater than the student's outstanding credit."
-            );
-
-            return;
-        }
-
         try {
-
-            const newCreditBalance =
-                Number(current.creditBalance || 0) - amount;
 
             await recordFinancialTransaction(
                 student,
                 "Repayment",
-                amount,
-                Number(current.balance || 0),
-                newCreditBalance
+                amount
             );
 
             repaymentForm.reset();
@@ -1900,7 +1945,9 @@ if (repaymentForm) {
 
             console.error("Repayment error:", error);
 
-            alert("Could not record the repayment.");
+            alert(error.message === "REPAYMENT_EXCEEDS_CREDIT"
+                ? "The repayment cannot be greater than the student's current outstanding credit."
+                : "Could not record the repayment. Check the connection and try again.");
         }
     });
 }
@@ -1926,7 +1973,6 @@ function displayTransactions() {
 
         return;
     }
-
 
     transactions.forEach(transaction => {
 
@@ -2061,7 +2107,6 @@ function displayCredits() {
         return Number(financialRecord.creditBalance || 0) > 0;
     });
 
-
     if (studentsWithCredit.length === 0) {
 
         creditList.innerHTML = `
@@ -2072,7 +2117,6 @@ function displayCredits() {
 
         return;
     }
-
 
     studentsWithCredit.forEach(student => {
 
@@ -2102,7 +2146,6 @@ function updateReports() {
     let totalCredit = 0;
     let totalRepayments = 0;
 
-
     transactions.forEach(transaction => {
 
         const type = String(transaction.type || "").toLowerCase();
@@ -2127,7 +2170,6 @@ function updateReports() {
         }
     });
 
-
     const outstandingCredit = students.reduce((total, student) => {
 
         const financialRecord = getBalanceByUid(student.authUid);
@@ -2135,7 +2177,6 @@ function updateReports() {
         return total + Number(financialRecord.creditBalance || 0);
 
     }, 0);
-
 
     const totalStudentsElement = document.getElementById("total-students");
     const dashboardDeposits = document.getElementById("dashboard-deposits");
@@ -2146,7 +2187,6 @@ function updateReports() {
     const reportSales = document.getElementById("report-sales");
     const reportCredit = document.getElementById("report-credit");
     const reportRepayments = document.getElementById("report-repayments");
-
 
     if (totalStudentsElement) {
         totalStudentsElement.textContent = students.length;
@@ -2180,8 +2220,6 @@ function updateReports() {
         reportRepayments.textContent = formatMoney(totalRepayments);
     }
 }
-
-
 // ============================================
 // 25. STATISTICS DATE FILTER
 // ============================================
@@ -2244,7 +2282,9 @@ function updateStatistics() {
 
         return getDateValue(transaction) >= startDate;
     });
-        // FIRST BUYER
+
+
+    // FIRST BUYER
 
     const firstBuyerElement = document.getElementById("first-buyer");
 
@@ -2471,12 +2511,125 @@ if (statisticsPeriod) {
 
 
 // ============================================
+// STUDENT FEEDBACK SUBMISSION
+// ============================================
+
+if (feedbackForm) {
+    feedbackForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const user = auth.currentUser;
+        const category = getValue("feedback-category");
+        const message = getValue("feedback-message");
+
+        if (!user || user.uid === ADMIN_UID || !currentStudentUid || user.uid !== currentStudentUid) {
+            if (feedbackStatus) feedbackStatus.textContent = "Please sign in with your student account to submit feedback.";
+            return;
+        }
+
+        if (!category || !message) {
+            if (feedbackStatus) feedbackStatus.textContent = "Please complete all feedback fields.";
+            return;
+        }
+
+        if (message.length > 2000) {
+            if (feedbackStatus) feedbackStatus.textContent = "Feedback must be 2,000 characters or fewer.";
+            return;
+        }
+
+        const submitButton = feedbackForm.querySelector('button[type="submit"]');
+        if (submitButton) submitButton.disabled = true;
+        if (feedbackStatus) feedbackStatus.textContent = "Submitting feedback...";
+
+        try {
+            const studentQuery = query(
+                collection(db, "students"),
+                where("authUid", "==", user.uid)
+            );
+            const studentSnapshot = await getDocs(studentQuery);
+
+            if (studentSnapshot.empty) {
+                throw new Error("STUDENT_PROFILE_NOT_FOUND");
+            }
+
+            const student = studentSnapshot.docs[0].data();
+            const feedbackReference = doc(collection(db, "feedback"));
+
+            await runTransaction(db, async function(firebaseTransaction) {
+                firebaseTransaction.set(feedbackReference, {
+                    uid: user.uid,
+                    admission: student.admission,
+                    name: student.name || "Student",
+                    email: user.email || "",
+                    category,
+                    message,
+                    status: "New",
+                    date: new Date().toISOString(),
+                    createdAt: serverTimestamp()
+                });
+            });
+
+            feedbackForm.reset();
+            const nameInput = document.getElementById("feedback-name");
+            const emailInput = document.getElementById("feedback-email");
+            if (nameInput) nameInput.value = student.name || "";
+            if (emailInput) emailInput.value = user.email || "";
+            if (feedbackStatus) feedbackStatus.textContent = "Thank you. Your feedback was submitted successfully.";
+
+        } catch (error) {
+            console.error("Feedback submission error:", error);
+            if (feedbackStatus) feedbackStatus.textContent = "Could not submit feedback. Please try again.";
+        } finally {
+            if (submitButton) submitButton.disabled = false;
+        }
+    });
+}
+
+
+// ============================================
+// ADMIN FEEDBACK REVIEW ACTION
+// ============================================
+
+if (feedbackList) {
+    feedbackList.addEventListener("click", async function(event) {
+        const button = event.target.closest(".review-feedback");
+        if (!button) return;
+
+        if (auth.currentUser?.uid !== ADMIN_UID) {
+            alert("Only the administrator can review feedback.");
+            return;
+        }
+
+        const feedbackId = button.dataset.id;
+        if (!feedbackId) return;
+
+        button.disabled = true;
+
+        try {
+            await updateDoc(doc(db, "feedback", feedbackId), {
+                status: "Reviewed",
+                reviewedAt: serverTimestamp(),
+                reviewedBy: ADMIN_UID
+            });
+
+            const feedback = feedbacks.find(item => item.id === feedbackId);
+            if (feedback) feedback.status = "Reviewed";
+            displayFeedback();
+
+        } catch (error) {
+            console.error("Feedback review error:", error);
+            alert("Could not update feedback status. Check Firestore rules and try again.");
+            button.disabled = false;
+        }
+    });
+}
+
+
+// ============================================
 // DISPLAY STUDENT FEEDBACK (ADMIN)
 // ============================================
 
 function displayFeedback() {
-
-    const feedbackList = document.getElementById("feedback-list");
 
     if (!feedbackList) return;
 
@@ -2516,8 +2669,6 @@ function displayFeedback() {
         feedbackList.appendChild(row);
     });
 }
-
-
 // ============================================
 // 28. REFRESH ALL ADMIN DISPLAYS
 // ============================================
@@ -2580,6 +2731,14 @@ async function loadStudentPortal(uid, student) {
     if (classDisplay) {
         classDisplay.textContent = student.studentClass || "";
     }
+
+    // These fields are displayed for convenience; the submitted identity is
+    // always taken from the authenticated Firebase account and student record.
+    const feedbackNameInput = document.getElementById("feedback-name");
+    const feedbackEmailInput = document.getElementById("feedback-email");
+
+    if (feedbackNameInput) feedbackNameInput.value = student.name || "";
+    if (feedbackEmailInput) feedbackEmailInput.value = auth.currentUser?.email || "";
 
 
     // LOAD PRIVATE WALLET
