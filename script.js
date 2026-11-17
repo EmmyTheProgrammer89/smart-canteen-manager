@@ -1,4 +1,302 @@
-```javascript
+// ============================================
+// SMART CANTEEN MANAGER
+// FIREBASE VERSION
+// STUDENT SELF-REGISTRATION + ACCOUNT LINKING
+// STUDENT PURCHASE HISTORY + STATISTICS
+// ============================================
+
+import { auth, db } from "./firebase.js";
+import { getApp, getApps, initializeApp } from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
+
+import {
+    onAuthStateChanged,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    sendEmailVerification,
+    signOut,
+    getAuth,
+    inMemoryPersistence,
+    setPersistence
+} from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
+
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    where,
+    writeBatch,
+    runTransaction,
+    updateDoc,
+    serverTimestamp
+} from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
+
+
+// ============================================
+// 1. CONFIGURATION
+// ============================================
+
+const ADMIN_UID = "mRLoouOWj4Ng4phNGB7e6QAaNY32";
+
+
+// ============================================
+// 2. HTML ELEMENTS
+// ============================================
+
+const loginScreen = document.getElementById("login-screen");
+const loginForm = document.getElementById("login-form");
+const loginMessage = document.getElementById("login-message");
+
+const registerScreen = document.getElementById("student-register-screen");
+const registerForm = document.getElementById("student-register-form");
+const registerMessage = document.getElementById("register-message");
+
+const linkScreen = document.getElementById("student-link-screen");
+const linkForm = document.getElementById("student-link-form");
+const linkMessage = document.getElementById("link-message");
+
+const showRegisterButton = document.getElementById("show-register-button");
+const backToLoginButton = document.getElementById("back-to-login");
+const linkLogoutButton = document.getElementById("link-logout-button");
+
+const adminApp = document.getElementById("admin-app");
+const studentApp = document.getElementById("student-app");
+
+const adminLogoutButton = document.getElementById("admin-logout-button");
+const studentLogoutButton = document.getElementById("student-logout-button");
+
+const studentForm = document.getElementById("student-form");
+const studentList = document.getElementById("student-list");
+const admissionInput = document.getElementById("admission");
+
+const depositForm = document.getElementById("deposit-form");
+const purchaseForm = document.getElementById("purchase-form");
+const orderItemsContainer = document.getElementById("order-items-container");
+const addOrderItemButton = document.getElementById("add-order-item-button");
+const orderTotalElement = document.getElementById("order-total");
+const pendingOrdersList = document.getElementById("pending-orders-list");
+const creditForm = document.getElementById("credit-form");
+const repaymentForm = document.getElementById("repayment-form");
+
+const transactionList = document.getElementById("transaction-list");
+
+const selectAllTransactions = document.getElementById(
+    "select-all-transactions"
+);
+
+const deleteSelectedTransactions = document.getElementById(
+    "delete-selected-transactions"
+);
+
+const statisticsPeriod = document.getElementById("statistics-period");
+
+
+// ============================================
+// 3. APPLICATION DATA
+// ============================================
+
+let students = [];
+let balances = {};
+let transactions = [];
+let orders = [];
+let ordersLoadError = false;
+let feedbacks = [];
+
+let registrationInProgress = false;
+let currentStudentUid = null;
+let studentSearchTerm = "";
+
+// A separate in-memory Firebase Auth session verifies the student's password
+// without signing the administrator out of the seller dashboard.
+const passwordCheckApp = getApps().find(app => app.name === "purchase-password-check") || initializeApp(
+    getApp().options,
+    "purchase-password-check"
+);
+const passwordCheckAuth = getAuth(passwordCheckApp);
+let passwordCheckPersistenceReady = setPersistence(
+    passwordCheckAuth,
+    inMemoryPersistence
+);
+
+
+// ============================================
+// 4. GENERAL FUNCTIONS
+// ============================================
+
+function formatMoney(amount) {
+    return Number(amount || 0).toLocaleString("en-US") + " RWF";
+}
+
+
+function getValue(id) {
+    const element = document.getElementById(id);
+    return element ? element.value.trim() : "";
+}
+
+
+function showError(message) {
+    if (loginMessage) {
+        loginMessage.textContent = message;
+    }
+}
+
+
+function showRegisterMessage(message) {
+    if (registerMessage) {
+        registerMessage.textContent = message;
+    }
+}
+
+
+function showLinkMessage(message) {
+    if (linkMessage) {
+        linkMessage.textContent = message;
+    }
+}
+
+
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => {
+
+        const replacements = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+        };
+
+        return replacements[character];
+    });
+}
+
+
+function showLogin() {
+    loginScreen.hidden = false;
+    registerScreen.hidden = true;
+    linkScreen.hidden = true;
+    adminApp.hidden = true;
+    studentApp.hidden = true;
+}
+
+
+function showRegister() {
+    loginScreen.hidden = true;
+    registerScreen.hidden = false;
+    linkScreen.hidden = true;
+    adminApp.hidden = true;
+    studentApp.hidden = true;
+}
+
+
+function showLink() {
+    loginScreen.hidden = true;
+    registerScreen.hidden = true;
+    linkScreen.hidden = false;
+    adminApp.hidden = true;
+    studentApp.hidden = true;
+}
+
+
+function showAdmin() {
+    loginScreen.hidden = true;
+    registerScreen.hidden = true;
+    linkScreen.hidden = true;
+    adminApp.hidden = false;
+    studentApp.hidden = true;
+}
+
+
+function showStudent() {
+    loginScreen.hidden = true;
+    registerScreen.hidden = true;
+    linkScreen.hidden = true;
+    adminApp.hidden = true;
+    studentApp.hidden = false;
+}
+
+
+function getStudentByAdmission(admission) {
+    return students.find(student => {
+        return student.admission === admission;
+    });
+}
+
+
+function getBalanceByUid(uid) {
+    if (!uid) {
+        return {
+            balance: 0,
+            creditBalance: 0
+        };
+    }
+
+    return balances[uid] || {
+        balance: 0,
+        creditBalance: 0
+    };
+}
+
+
+function getDateValue(transaction) {
+
+    if (transaction.date) {
+        const date = new Date(transaction.date);
+
+        if (!Number.isNaN(date.getTime())) {
+            return date;
+        }
+    }
+
+    if (transaction.createdAt?.toDate) {
+        return transaction.createdAt.toDate();
+    }
+
+    return new Date(0);
+}
+
+
+function formatDate(transaction) {
+    const date = getDateValue(transaction);
+
+    if (date.getTime() === 0) {
+        return "Unknown date";
+    }
+
+    return date.toLocaleString();
+}
+
+
+function getTransactionProduct(transaction) {
+
+    if (transaction.product) {
+        return String(transaction.product).trim();
+    }
+
+    const type = String(transaction.type || "");
+
+    if (type.startsWith("Purchase:")) {
+        return type.substring("Purchase:".length).trim();
+    }
+
+    if (type.startsWith("Credit:")) {
+        return type.substring("Credit:".length).trim();
+    }
+
+    return "Unknown product";
+}
+
+
+function isPurchaseTransaction(transaction) {
+
+    const type = String(transaction.type || "").toLowerCase();
+
+    return (
+        type === "purchase" ||
+        type === "credit purchase" ||
+        type.startsWith("purchase:") ||
+        type.startsWith("credit:")
     );
 }
 
@@ -46,37 +344,54 @@ async function verifyStudentPurchasePassword(student, password) {
 }
 
 function currentMonthKey(date = new Date()) {
-    return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+    // Always use Rwanda local calendar months (Africa/Kigali).
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Africa/Kigali",
+        year: "numeric",
+        month: "2-digit"
+    }).formatToParts(date);
+
+    const year = parts.find(part => part.type === "year").value;
+    const month = parts.find(part => part.type === "month").value;
+    return `${year}-${month}`;
 }
 
 async function maybeAwardMonthlyPurchaseBonus(student) {
-    const now = new Date();
-    const monthKey = currentMonthKey(now);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    if (!student?.authUid || !student?.admission) return false;
 
-    const monthlyTransactionsQuery = query(
-        collection(db, "transactions"),
-        where("admission", "==", student.admission)
+    const monthKey = currentMonthKey(new Date());
+    const completedOrdersQuery = query(
+        collection(db, "orders"),
+        where("admission", "==", student.admission),
+        where("status", "==", "Completed")
     );
-    const snapshot = await getDocs(monthlyTransactionsQuery);
-    const monthlySpend = snapshot.docs
-        .map(item => item.data())
-        .filter(item => isPurchaseTransaction(item))
-        .filter(item => {
-            const date = getDateValue(item);
-            return date >= monthStart && date < nextMonthStart;
-        })
-        .reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const completedOrdersSnapshot = await getDocs(completedOrdersQuery);
+
+    // Only completed wallet orders count. Deposits, credit purchases,
+    // pending orders and preparing orders are deliberately excluded.
+    const monthlySpend = completedOrdersSnapshot.docs.reduce((sum, item) => {
+        const order = item.data();
+        const completedAt = order.completedAt?.toDate
+            ? order.completedAt.toDate()
+            : order.completedAt
+                ? new Date(order.completedAt)
+                : null;
+
+        if (!completedAt || Number.isNaN(completedAt.getTime())) return sum;
+        if (currentMonthKey(completedAt) !== monthKey) return sum;
+
+        const amount = Number(order.total || 0);
+        return Number.isFinite(amount) && amount > 0 ? sum + amount : sum;
+    }, 0);
 
     if (monthlySpend < 70000) return false;
 
-    const bonusId = student.authUid + "_" + monthKey;
+    const bonusId = `${student.authUid}_${monthKey}`;
     const bonusReference = doc(db, "monthlyBonuses", bonusId);
     const balanceReference = doc(db, "balances", student.authUid);
     const bonusTransactionReference = doc(collection(db, "transactions"));
 
-    const awarded = await runTransaction(db, async function(firebaseTransaction) {
+    return await runTransaction(db, async function(firebaseTransaction) {
         const bonusSnapshot = await firebaseTransaction.get(bonusReference);
         if (bonusSnapshot.exists()) return false;
 
@@ -112,8 +427,6 @@ async function maybeAwardMonthlyPurchaseBonus(student) {
         });
         return true;
     });
-
-    return awarded;
 }
 
 async function showPendingMonthlyBonus(uid) {
@@ -134,6 +447,7 @@ async function showPendingMonthlyBonus(uid) {
     const bonusReference = doc(db, "monthlyBonuses", pendingBonus.id);
     const modal = document.getElementById("monthly-bonus-modal");
     const okButton = document.getElementById("bonus-modal-ok");
+
     if (!modal || !okButton) return;
 
     modal.hidden = false;
@@ -583,8 +897,7 @@ if (linkForm) {
             showLinkMessage("Enter your admission number.");
             return;
         }
-
-        try {
+                try {
 
             showLinkMessage("Checking your student record...");
 
@@ -599,89 +912,7 @@ if (linkForm) {
             const invitationSnapshot = await getDoc(invitationReference);
 
             if (!invitationSnapshot.exists()) {
-                showLinkMessage(
-                    "No approved invitation was found for this admission number. Contact the canteen administrator."
-                );
-                return;
-            }
 
-            const invitation = invitationSnapshot.data();
-
-            if (!invitation.approved) {
-                showLinkMessage(
-                    "Your student account has not yet been approved."
-                );
-                return;
-            }
-
-            if (invitation.email.toLowerCase() !== user.email.toLowerCase()) {
-                showLinkMessage(
-                    "This admission number is linked to a different email address."
-                );
-                return;
-            }
-
-            if (invitation.claimed) {
-                showLinkMessage(
-                    "This student account has already been linked."
-                );
-                return;
-            }
-
-            const studentSnapshot = await getDoc(studentReference);
-
-            if (!studentSnapshot.exists()) {
-                showLinkMessage("Student record not found.");
-                return;
-            }
-
-            const batch = writeBatch(db);
-
-            batch.update(studentReference, {
-                authUid: user.uid
-            });
-
-            batch.update(invitationReference, {
-                claimed: true,
-                authUid: user.uid,
-                claimedAt: serverTimestamp()
-            });
-
-            batch.set(
-                doc(db, "balances", user.uid),
-                {
-                    admission: admission,
-                    balance: 0,
-                    creditBalance: 0
-                },
-                { merge: true }
-            );
-
-            await batch.commit();
-
-            showLinkMessage("Your student account has been linked successfully.");
-
-            const linkedStudent = {
-                ...studentSnapshot.data(),
-                authUid: user.uid
-            };
-
-            currentStudentUid = user.uid;
-
-            showStudent();
-
-            await loadStudentPortal(user.uid, linkedStudent);
-
-        } catch (error) {
-
-            console.error("Student account linking error:", error);
-
-            showLinkMessage(
-                "Unable to link your account. Please try again or contact the administrator."
-            );
-        }
-    });
-}
                 showLinkMessage(
                     "No approved registration was found. Check your admission number or contact the administrator."
                 );
@@ -959,8 +1190,6 @@ function displayStudents() {
         studentList.appendChild(row);
     });
 }
-
-
 // ============================================
 // 14. DELETE STUDENT
 // ============================================
@@ -983,47 +1212,6 @@ if (studentList) {
 
         if (Number(financialRecord.creditBalance || 0) > 0) {
 
-            alert(
-                "This student has outstanding credit. Clear the credit before deleting the student."
-            );
-
-            return;
-        }
-
-        const confirmed = confirm(
-            "Are you sure you want to delete " + student.name + "?"
-        );
-
-        if (!confirmed) return;
-
-        try {
-
-            const batch = writeBatch(db);
-
-            batch.delete(doc(db, "students", admission));
-
-            batch.delete(doc(db, "studentInvitations", admission));
-
-            if (student.authUid) {
-                batch.delete(doc(db, "balances", student.authUid));
-            }
-
-            await batch.commit();
-
-            alert("Student record deleted.");
-
-            await loadAdminData();
-
-            refreshDisplays();
-
-        } catch (error) {
-
-            console.error("Delete student error:", error);
-
-            alert("Unable to delete the student. Check your Firebase rules.");
-        }
-    });
-}
             alert(
                 "This student still has unpaid credit. Clear the credit before deleting the student."
             );
@@ -1160,7 +1348,7 @@ if (depositForm) {
 
     depositForm.addEventListener("submit", async function(event) {
 
-        event.preventDefault();
+                                         event.preventDefault();
 
         const admission = getValue("deposit-student-id");
         const amount = Number(getValue("deposit-amount"));
@@ -1324,142 +1512,6 @@ if (purchaseForm) {
         const items = readOrderItems();
 
         if (!student) {
-            alert("Student not found. Check the admission number.");
-            return;
-        }
-
-        if (!student.authUid) {
-            alert("This student has not linked their account yet.");
-            return;
-        }
-
-        if (!studentPassword) {
-            alert("The student must enter their account password to authorize the purchase.");
-            return;
-        }
-
-        if (items.length === 0) {
-            alert("Add at least one product to the order.");
-            return;
-        }
-
-        const invalidItem = items.find(item =>
-            !item.product ||
-            !Number.isFinite(item.unitPrice) ||
-            item.unitPrice <= 0 ||
-            !Number.isInteger(item.quantity) ||
-            item.quantity <= 0
-        );
-
-        if (invalidItem) {
-            alert("Check every product name, price and quantity.");
-            return;
-        }
-
-        const total = items.reduce((sum, item) => sum + item.lineTotal, 0);
-
-        if (!Number.isSafeInteger(total) || total <= 0) {
-            alert("The order total is invalid.");
-            return;
-        }
-
-        try {
-
-            await verifyStudentPurchasePassword(student, studentPassword);
-
-            const current = getBalanceByUid(student.authUid);
-
-            if (Number(current.balance || 0) < total) {
-                alert("The student does not have enough money in their wallet.");
-                return;
-            }
-
-            const newBalance = Number(current.balance || 0) - total;
-
-            const batch = writeBatch(db);
-
-            batch.set(
-                doc(db, "balances", student.authUid),
-                {
-                    admission: student.admission,
-                    balance: newBalance,
-                    creditBalance: Number(current.creditBalance || 0)
-                }
-            );
-
-            const orderReference = doc(collection(db, "orders"));
-
-            const orderData = {
-                admission: student.admission,
-                studentName: student.name,
-                items: items,
-                total: total,
-                status: "Pending",
-                date: new Date().toISOString(),
-                createdAt: serverTimestamp()
-            };
-
-            batch.set(orderReference, orderData);
-
-            items.forEach(item => {
-
-                const transactionReference = doc(
-                    collection(db, "transactions")
-                );
-
-                batch.set(transactionReference, {
-                    admission: student.admission,
-                    studentName: student.name,
-                    type: "Purchase",
-                    product: item.product,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    amount: item.lineTotal,
-                    orderId: orderReference.id,
-                    date: new Date().toISOString(),
-                    createdAt: serverTimestamp()
-                });
-            });
-
-            await batch.commit();
-
-            purchaseForm.reset();
-
-            if (orderItemsContainer) {
-                orderItemsContainer.innerHTML = "";
-                addOrderItemRow();
-            }
-
-            updateOrderTotal();
-
-            await loadAdminData();
-
-            refreshDisplays();
-
-            alert("Order submitted successfully.");
-
-        } catch (error) {
-
-            console.error("Purchase error:", error);
-
-            if (error.message === "PASSWORD_REQUIRED") {
-                alert("Enter the student's account password.");
-            } else if (error.message === "STUDENT_EMAIL_NOT_FOUND") {
-                alert("The student's approved email could not be found.");
-            } else if (error.message === "STUDENT_ACCOUNT_NOT_LINKED") {
-                alert("The student's account has not been linked correctly.");
-            } else if (error.message === "WRONG_STUDENT_ACCOUNT") {
-                alert("The password belongs to a different student account.");
-            } else if (error.code === "auth/invalid-credential" ||
-                       error.code === "auth/wrong-password" ||
-                       error.code === "auth/user-not-found") {
-                alert("The student password is incorrect.");
-            } else {
-                alert("The purchase could not be completed. Check the connection and try again.");
-            }
-        }
-    });
-}
             alert("Please enter a valid student admission number.");
             return;
         }
@@ -1574,13 +1626,6 @@ if (purchaseForm) {
                     });
                 });
             });
-
-            try {
-                await maybeAwardMonthlyPurchaseBonus(student);
-            } catch (bonusError) {
-                console.error("Monthly bonus calculation failed:", bonusError);
-                alert("The purchase was saved, but the monthly bonus could not be processed. Check Firestore rules.");
-            }
 
             await loadAdminData();
             refreshDisplays();
@@ -1700,6 +1745,19 @@ if (pendingOrdersList) {
             }
 
             await updateDoc(doc(db, "orders", orderId), orderUpdate);
+
+            if (nextStatus === "Completed") {
+                const orderStudent = getStudentByAdmission(order.admission);
+                if (orderStudent) {
+                    try {
+                        await maybeAwardMonthlyPurchaseBonus(orderStudent);
+                    } catch (bonusError) {
+                        console.error("Monthly bonus calculation failed:", bonusError);
+                        alert("The order was marked completed, but the monthly bonus could not be processed. Check Firestore rules.");
+                    }
+                }
+            }
+
             await loadAdminData();
             refreshDisplays();
 
@@ -1738,8 +1796,7 @@ if (creditForm) {
             alert("This student has not linked their account yet.");
             return;
         }
-
-        if (!product) {
+                if (!product) {
             alert("Enter the product purchased.");
             return;
         }
@@ -1764,39 +1821,6 @@ if (creditForm) {
                 newCreditBalance,
                 product
             );
-
-            try {
-                await maybeAwardMonthlyPurchaseBonus(student);
-            } catch (bonusError) {
-                console.error("Monthly bonus calculation failed:", bonusError);
-                alert("Credit purchase was recorded, but the monthly bonus could not be processed. Check Firestore rules.");
-            }
-
-            await loadAdminData();
-            refreshDisplays();
-            creditForm.reset();
-
-            alert("Credit purchase recorded successfully.");
-
-        } catch (error) {
-
-            console.error("Credit error:", error);
-
-            alert("Could not record the credit purchase.");
-        }
-    });
-}
-                Number(current.balance || 0),
-                newCreditBalance,
-                product
-            );
-
-            try {
-                await maybeAwardMonthlyPurchaseBonus(student);
-            } catch (bonusError) {
-                console.error("Monthly bonus calculation failed:", bonusError);
-                alert("Credit purchase was recorded, but the monthly bonus could not be processed. Check Firestore rules.");
-            }
 
             await loadAdminData();
             refreshDisplays();
@@ -2156,6 +2180,8 @@ function updateReports() {
         reportRepayments.textContent = formatMoney(totalRepayments);
     }
 }
+
+
 // ============================================
 // 25. STATISTICS DATE FILTER
 // ============================================
@@ -2218,9 +2244,7 @@ function updateStatistics() {
 
         return getDateValue(transaction) >= startDate;
     });
-
-
-    // FIRST BUYER
+        // FIRST BUYER
 
     const firstBuyerElement = document.getElementById("first-buyer");
 
