@@ -868,3 +868,43 @@ table input[type="checkbox"] {
         flex-direction: column;
     }
 }
+
+
+/* Student search */
+#student-search {
+    width: 100%;
+    max-width: 520px;
+    margin: 10px 0 18px;
+    padding: 12px 14px;
+    border: 1px solid #cbd5dc;
+    border-radius: 8px;
+    font: inherit;
+}
+
+/* Monthly student bonus announcement */
+.monthly-bonus-card {
+    max-width: 1000px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    margin: 28px 0;
+    padding: 26px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #eef8f1, #f7fbf8);
+    border: 1px solid #cfe6d5;
+}
+.monthly-bonus-copy { flex: 1; }
+.monthly-bonus-card h2 { color: #176b3a; margin: 8px 0 12px; }
+.monthly-bonus-card p { line-height: 1.65; }
+.monthly-bonus-card img { width: min(38%, 320px); max-height: 230px; object-fit: cover; border-radius: 12px; }
+.bonus-eyebrow { color: #16834a; font-size: 12px; font-weight: 800; letter-spacing: 1.5px; }
+.bonus-note { margin-top: 10px; color: #59665e; font-size: 13px; }
+.bonus-modal { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(10, 25, 38, .72); }
+.bonus-modal[hidden] { display: none !important; }
+.bonus-modal-content { width: 100%; max-width: 460px; padding: 28px; text-align: center; border-radius: 18px; background: #fff; box-shadow: 0 18px 60px rgba(0,0,0,.25); }
+.bonus-modal-content img { width: 100%; max-height: 190px; object-fit: cover; border-radius: 12px; margin-bottom: 18px; }
+.bonus-modal-content h2 { color: #176b3a; margin: 8px 0 12px; }
+.bonus-modal-content p { line-height: 1.6; margin-bottom: 16px; }
+.bonus-modal-content button { min-width: 130px; }
+@media (max-width: 650px) { .monthly-bonus-card { flex-direction: column-reverse; align-items: stretch; } .monthly-bonus-card img { width: 100%; max-height: 220px; } }
