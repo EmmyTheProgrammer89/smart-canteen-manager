@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -82,7 +81,6 @@
     </div>
 
     <div class="main-content" id="dashboard-section">
-
         <header>
             <h1>Administrator Dashboard</h1>
             <p>Welcome to Smart Canteen Manager</p>
@@ -90,22 +88,10 @@
 
         <!-- DASHBOARD CARDS -->
         <section class="cards">
-            <div class="card">
-                <h3>Total Students</h3>
-                <p id="total-students">0</p>
-            </div>
-            <div class="card">
-                <h3>Total Deposits</h3>
-                <p id="dashboard-deposits">0 RWF</p>
-            </div>
-            <div class="card">
-                <h3>Total Sales</h3>
-                <p id="dashboard-sales">0 RWF</p>
-            </div>
-            <div class="card">
-                <h3>Outstanding Credit</h3>
-                <p id="dashboard-credit">0 RWF</p>
-            </div>
+            <div class="card"><h3>Total Students</h3><p id="total-students">0</p></div>
+            <div class="card"><h3>Total Deposits</h3><p id="dashboard-deposits">0 RWF</p></div>
+            <div class="card"><h3>Total Sales</h3><p id="dashboard-sales">0 RWF</p></div>
+            <div class="card"><h3>Outstanding Credit</h3><p id="dashboard-credit">0 RWF</p></div>
         </section>
 
         <section class="welcome">
@@ -117,37 +103,23 @@
         <section id="students-section">
             <h2>Student Management</h2>
             <p>Register and manage school students.</p>
-
             <form id="student-form">
                 <label for="admission">Admission Number</label>
                 <input type="text" id="admission" placeholder="Automatically generated" readonly>
-
                 <label for="student-name">Full Name</label>
                 <input type="text" id="student-name" placeholder="Enter student name" required>
-
                 <label for="student-class">Class</label>
                 <input type="text" id="student-class" placeholder="Example: S4" required>
-
                 <label for="phone">Phone Number (Optional)</label>
                 <input type="tel" id="phone" placeholder="Enter phone number">
-
                 <label for="student-email">Student Email Address</label>
                 <input type="email" id="student-email" placeholder="Enter student's email address" required>
-
                 <button type="submit">Register Student</button>
             </form>
 
             <h3>Registered Students</h3>
-
-            <!-- STUDENT SEARCH -->
-            <div class="student-search">
-                <label for="student-search-input">Search Students</label>
-                <input
-                    type="search"
-                    id="student-search-input"
-                    placeholder="Search by name or admission number..."
-                >
-            </div>
+            <label for="student-search">Search students by name or admission number</label>
+            <input type="search" id="student-search" placeholder="Type a student name or admission number..." autocomplete="off">
 
             <div class="table-container">
                 <table>
@@ -172,10 +144,8 @@
             <form id="deposit-form">
                 <label for="deposit-student-id">Student Admission Number</label>
                 <input type="text" id="deposit-student-id" placeholder="Enter admission number" required>
-
                 <label for="deposit-amount">Deposit Amount (RWF)</label>
                 <input type="number" id="deposit-amount" placeholder="Enter amount" min="1" required>
-
                 <button type="submit">Add Deposit</button>
             </form>
         </section>
@@ -183,7 +153,6 @@
         <!-- 7. TRANSACTION HISTORY -->
         <section id="transactions-section">
             <h2>Transaction History</h2>
-
             <div class="transaction-actions">
                 <label>
                     <input type="checkbox" id="select-all-transactions">
@@ -217,6 +186,13 @@
             <form id="purchase-form" class="purchase-order-form">
                 <label for="purchase-student-id">Student Admission Number</label>
                 <input type="text" id="purchase-student-id" placeholder="Enter student admission number" required>
+
+                <label for="purchase-student-password">Student account password</label>
+                <input type="password" id="purchase-student-password" placeholder="Student enters their account password" minlength="6" autocomplete="off" required>
+
+                <p class="order-help">
+                    The student must enter their own account password to authorize this purchase.
+                </p>
 
                 <h3>Order items</h3>
 
@@ -258,10 +234,10 @@
                         <tr>
                             <th>Order date</th>
                             <th>Student</th>
-                            <th>Products and quantities</th>
+                            <th>Products</th>
                             <th>Total (RWF)</th>
                             <th>Status</th>
-                            <th>Administrator action</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="pending-orders-list"></tbody>
@@ -269,12 +245,11 @@
             </div>
         </section>
 
-        <!-- 10. CREDIT MANAGEMENT -->
+        <!-- CREDIT MANAGEMENT -->
         <section id="credit-section">
-            <h2>Credit Management</h2>
-            <p>Manage student purchases made on credit and repayments.</p>
+            <h2>Student Credit Management</h2>
 
-            <h3>Record Credit Purchase</h3>
+            <h3>Record Credit</h3>
             <form id="credit-form">
                 <label for="credit-student-id">Student Admission Number</label>
                 <input type="text" id="credit-student-id" placeholder="Enter admission number" required>
@@ -300,7 +275,6 @@
             </form>
 
             <h3>Outstanding Student Credit</h3>
-
             <div class="table-container">
                 <table>
                     <thead>
@@ -315,31 +289,18 @@
             </div>
         </section>
 
-        <!-- 11. FINANCIAL REPORTS -->
+        <!-- 10. FINANCIAL REPORTS -->
         <section id="reports-section">
             <h2>Financial Reports</h2>
-
             <div class="cards">
-                <div class="card">
-                    <h3>Total Deposits</h3>
-                    <p id="report-deposits">0 RWF</p>
-                </div>
-                <div class="card">
-                    <h3>Total Sales</h3>
-                    <p id="report-sales">0 RWF</p>
-                </div>
-                <div class="card">
-                    <h3>Outstanding Credit</h3>
-                    <p id="report-credit">0 RWF</p>
-                </div>
-                <div class="card">
-                    <h3>Total Repayments</h3>
-                    <p id="report-repayments">0 RWF</p>
-                </div>
+                <div class="card"><h3>Total Deposits</h3><p id="report-deposits">0 RWF</p></div>
+                <div class="card"><h3>Total Sales</h3><p id="report-sales">0 RWF</p></div>
+                <div class="card"><h3>Outstanding Credit</h3><p id="report-credit">0 RWF</p></div>
+                <div class="card"><h3>Total Repayments</h3><p id="report-repayments">0 RWF</p></div>
             </div>
         </section>
 
-        <!-- 12. STATISTICS -->
+        <!-- 11. STATISTICS -->
         <section id="statistics-section">
             <h2>Canteen Statistics</h2>
             <p>Analyze student purchasing activity and popular products.</p>
@@ -377,7 +338,6 @@
             </div>
 
             <h3>Top Buying Students</h3>
-
             <div class="table-container">
                 <table>
                     <thead>
@@ -394,7 +354,6 @@
             </div>
 
             <h3>Popular Products</h3>
-
             <div class="table-container">
                 <table>
                     <thead>
@@ -410,7 +369,7 @@
             </div>
         </section>
 
-        <!-- 13. FEEDBACK MANAGEMENT -->
+        <!-- 12. FEEDBACK MANAGEMENT -->
         <section id="feedback-management-section">
             <h2>Feedback Management</h2>
             <p>Read feedback submitted by students and review their suggestions.</p>
@@ -432,13 +391,11 @@
                 </table>
             </div>
         </section>
-
     </div>
 </div>
 
-<!-- 14. STUDENT PORTAL -->
+<!-- 13. STUDENT PORTAL -->
 <div id="student-app" class="student-app" hidden>
-
     <header class="student-header">
         <div>
             <h1>Student Portal</h1>
@@ -458,12 +415,10 @@
     <!-- STUDENT WALLET AND CREDIT -->
     <section class="student-balance-section">
         <h2>My Wallet Balance</h2>
-
         <div class="card">
             <h3>Available Balance</h3>
             <p id="student-balance">Loading...</p>
         </div>
-
         <div class="card">
             <h3>Outstanding Credit</h3>
             <p id="student-credit-balance">Loading...</p>
@@ -495,7 +450,41 @@
         </div>
     </section>
 
-    <!-- STUDENT PORTAL FOOTER -->
+    <!-- MONTHLY PURCHASE BONUS ANNOUNCEMENT -->
+    <section id="monthly-bonus-section" class="monthly-bonus-card">
+        <div class="monthly-bonus-copy">
+            <p class="bonus-eyebrow">SMART CANTEEN REWARDS</p>
+            <h2>Save more, earn more!</h2>
+            <p>
+                Make purchases worth <strong>70,000 FRW</strong> or more during a calendar month
+                and receive an extra <strong>5,000 FRW</strong> in your wallet.
+            </p>
+            <p class="bonus-note">
+                Only completed purchases count toward the monthly target. Deposits do not count.
+            </p>
+        </div>
+
+        <img src="bonus-student.png" alt="Student celebrating a 5,000 FRW canteen reward">
+    </section>
+
+    <!-- MONTHLY BONUS POPUP -->
+    <div id="monthly-bonus-modal" class="bonus-modal" hidden role="dialog" aria-modal="true" aria-labelledby="bonus-modal-title">
+        <div class="bonus-modal-content">
+            <img src="bonus-student.png" alt="Student celebrating a 5,000 FRW reward">
+
+            <p class="bonus-eyebrow">MONTHLY BONUS ACHIEVED</p>
+            <h2 id="bonus-modal-title">Congratulations!</h2>
+
+            <p>
+                You reached the monthly purchase target of 70,000 FRW.
+                A bonus of <strong>5,000 FRW</strong> has been added to your wallet.
+            </p>
+
+            <button type="button" id="bonus-modal-ok">OK</button>
+        </div>
+    </div>
+
+    <!-- FOOTER AND STUDENT FEEDBACK -->
     <footer class="footer" id="student-footer">
         <div class="footer-container">
 
@@ -524,19 +513,9 @@
                         <option value="Appreciation">Appreciation</option>
                     </select>
 
-                    <input
-                        type="text"
-                        id="feedback-name"
-                        placeholder="Your name"
-                        required
-                    >
+                    <input type="text" id="feedback-name" placeholder="Your name" required>
 
-                    <input
-                        type="email"
-                        id="feedback-email"
-                        placeholder="Your Email"
-                        required
-                    >
+                    <input type="email" id="feedback-email" placeholder="Your Email" required>
 
                     <textarea
                         id="feedback-message"
@@ -558,10 +537,9 @@
             <p>&copy; 2026 Smart Canteen Manager. All rights reserved.</p>
         </div>
     </footer>
-
 </div>
 
-<!-- 15. JAVASCRIPT MODULE -->
+<!-- 14. JAVASCRIPT MODULE -->
 <script type="module" src="script.js"></script>
 
 </body>
